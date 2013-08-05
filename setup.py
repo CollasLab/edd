@@ -10,11 +10,10 @@ setup(name='enriched_domain_caller',
       url='http://github.com/eivindgl/edc',
       author='Eivind G. Lund',
       author_email='e.g.lund@medisin.uio.no',
-      package_dir={'enriched_domain_caller' : 'enriched_domain_caller'},
       packages=['enriched_domain_caller'],
       scripts=['bin/edc'],
     ext_modules=[
-            Extension('enriched_domain_caller/max_segments', ['enriched_domain_caller/max_segments.pyx']),
+            Extension('max_segments', ['enriched_domain_caller/max_segments.pyx']),
             ],
     cmdclass = {'build_ext': build_ext},
     )
