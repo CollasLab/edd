@@ -12,9 +12,10 @@ setup(name='enriched_domain_caller',
       package_dir={'enriched_domain_caller' : 'enriched_domain_caller'},
       packages=['enriched_domain_caller'],
       scripts=['bin/edc'],
-      # install_requires=[
-      #     'Cython'
-      # ],
+      install_requires=[
+          'numpy',
+          'pandas'
+      ],
     ext_modules=[
             Extension('enriched_domain_caller/max_segments', ['enriched_domain_caller/max_segments.pyx']),
             ],
