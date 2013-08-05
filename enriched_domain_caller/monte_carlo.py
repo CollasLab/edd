@@ -1,6 +1,8 @@
 import numpy as np
 from collections import Counter
 from enriched_domain_caller import max_segments
+import itertools
+import pandas as pa
 
 class MonteCarlo(object):
     """
@@ -44,3 +46,41 @@ class MonteCarlo(object):
     def __call__(self, i):
         print 'iteration:', i
         return self.trial()
+
+def get_sig_limit(obs, mc, fdr_lim):
+    '''
+    Given two count dicts of observed/simulated segment score counts,
+    Finds the segment score limit that falls below the fdr_limit.
+    FDR(score) is computed as sum(freq(H0_i)) / sum(freq(Obs_i))
+      for i from score to max_score
+    '''
+    def cumulative_prct(xs):
+        return xs[::-1].cumsum()[::-1] / float(xs.sum())
+
+    def make_dense(xs):
+        i = xs.index.values
+        reps = np.concatenate((i[1:] - i[:-1], [1]))
+        xs = xs.repeat(reps).values
+        idx = np.arange(i.min(), i.max() + 1)
+        return pa.Series(xs, index=idx)
+
+    def increase_length(a, l):
+        assert len(a) < l
+        start = len(a) + 1
+        end = l
+        idx = np.arange(start, end + 1)
+        s = pa.Series(np.zeros(end - start + 1), index=idx)
+        return pa.concat([a, s])
+    scores = [x.score for x in itertools.chain.from_iterable(obs.values())]
+    h0 = pa.Series(mc)
+    s = pa.Series(Counter(scores))
+    obs_prct = make_dense(cumulative_prct(s))
+    h0_prct = make_dense(cumulative_prct(h0))
+    if len(h0_prct) > len(obs_prct):
+        obs_prct = increase_length(obs_prct, len(h0_prct))
+    else:
+        h0_prct = increase_length(h0_prct, len(obs_prct))
+
+    fdr = h0_prct / obs_prct
+    lim = fdr[(fdr < fdr_lim)].index[0]
+    return lim

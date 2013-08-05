@@ -1,13 +1,12 @@
 #!/usr/bin/env python
-from enriched_domain_caller import max_segments, MonteCarlo
+from enriched_domain_caller import max_segments, MonteCarlo, get_sig_limit
 import sys
 import argparse
 import operator
 import multiprocessing
-import itertools
 import numpy as np
 from collections import namedtuple, Counter, defaultdict
-import pandas as pa
+
 bed = namedtuple('BedGraph', 'chrom start end score')
 
 def read_scores(bedgraph, legal_chroms, input_scale_factor=1.05):
@@ -52,7 +51,7 @@ def write_segments(of, spc, segment_cutoff=1):
         segments = spc[chrom]
         segments.sort(key=operator.itemgetter(1)) # sort by start index
         for segment in segments:
-            if segment.score > segment_cutoff:
+            if segment.score >= segment_cutoff:
                 of.write('\t'.join((chrom, str(segment.start),
                                     str(segment.end),
                                     str(segment.score))))
@@ -93,54 +92,23 @@ def obs_results(scores_per_chrom):
                                      v[x.to_idx].end, x.score) for x in xs]
     return segments_per_chrom
 
-def get_sig_limit(obs, mc, fdr_lim):
-    def cumulative_prct(xs):
-        return xs[::-1].cumsum()[::-1] / float(xs.sum())
-
-    def make_dense(xs):
-        i = xs.index.values
-        reps = np.concatenate((i[1:] - i[:-1], [1]))
-        xs = xs.repeat(reps).values
-        idx = np.arange(i.min(), i.max() + 1)
-        return pa.Series(xs, index=idx)
-
-    def increase_length(a, l):
-        assert len(a) < l
-        start = len(a) + 1
-        end = l
-        idx = np.arange(start, end + 1)
-        s = pa.Series(np.zeros(end - start + 1), index=idx)
-        return pa.concat([a, s])
-    scores = [x.score for x in itertools.chain.from_iterable(obs.values())]
-    h0 = pa.Series(mc)
-    s = pa.Series(Counter(scores))
-    obs_prct = make_dense(cumulative_prct(s))
-    h0_prct = make_dense(cumulative_prct(h0))
-    if len(h0_prct) > len(obs_prct):
-        obs_prct = increase_length(obs_prct, len(h0_prct))
-    else:
-        h0_prct = increase_length(h0_prct, len(obs_prct))
-
-    fdr = h0_prct / obs_prct
-    lim = fdr[(fdr < fdr_lim)].index[0]
-    return lim
-
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('count_file', type=argparse.FileType('r'))
     parser.add_argument('-o', '--output-file', type=argparse.FileType('w'), default='-')
-    parser.add_argument('-s', '--segment-cutoff', type=int, default=1)
     parser.add_argument('-f', '--chrom-filter', nargs='+', default=['X', 'Y', 'MT', '1-22'])
     parser.add_argument('-n', '--num-trials', type=int, default=100)
     parser.add_argument('-p', '--nprocs', type=int, default=4)
     parser.add_argument('-l', '--fdr', type=float, default=0.05)
+    parser.add_argument('--input-scale-factor', type=float, default=1.05)
+
     args = parser.parse_args(sys.argv[1:])
     legal_chroms = parse_chrom_filter(args.chrom_filter)
-    bin_size, scores_per_chrom = read_scores(args.count_file, legal_chroms)
+    bin_size, scores_per_chrom = read_scores(args.count_file, legal_chroms,
+                                             input_scale_factor=args.input_scale_factor)
     chrom_sizes = as_chrom_sizes(scores_per_chrom)
 
     mc_res = monte_carlo(chrom_sizes, niter=args.num_trials, nprocs=args.nprocs)
     obs_res = obs_results(scores_per_chrom)
     fdr_score_lim = get_sig_limit(obs_res, mc_res, fdr_lim=args.fdr)
-    print fdr_score_lim
-    #write_segments(args.output_file, segments_per_chrom, segment_cutoff=args.segment_cutoff)
+    write_segments(args.output_file, obs_res, segment_cutoff=fdr_score_lim)
