@@ -27,7 +27,7 @@ def read_scores(bedgraph, legal_chroms, input_scale_factor=1.05):
         else:
             assert bin_size == length
         chrom = parts[0]
-        if chrom in legal_chroms:
+        if legal_chroms is None or chrom in legal_chroms:
             ip_cnt = int(parts[3])
             input_cnt = int(parts[4])
             ip_sum += ip_cnt
@@ -61,6 +61,8 @@ def write_segments(of, spc, segment_cutoff=1):
     print 'Done'
 
 def parse_chrom_filter(xs, prefix=''):
+    if xs is None:
+        return None
     chroms = []
     for x in xs:
         if '-' in x:
@@ -108,7 +110,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('count_file', type=argparse.FileType('r'))
     parser.add_argument('output_file', type=argparse.FileType('w'))
-    parser.add_argument('-f', '--chrom-filter', nargs='+', default=['X', 'Y', 'MT', '1-22'])
+    parser.add_argument('-f', '--chrom-filter', nargs='+', default=None)
     parser.add_argument('-n', '--num-trials', type=int, default=100)
     parser.add_argument('-p', '--nprocs', type=int, default=4)
     parser.add_argument('-l', '--fdr', type=float, default=0.05)
