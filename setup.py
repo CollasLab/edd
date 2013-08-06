@@ -12,6 +12,11 @@ setup(name='enriched_domain_caller',
       author_email='e.g.lund@medisin.uio.no',
       packages=['enriched_domain_caller'],
       scripts=['bin/edc'],
+            install_requires=[
+          'numpy',
+          'pandas'
+      ],
+
     ext_modules=[
             Extension('max_segments', ['enriched_domain_caller/max_segments.pyx']),
             ],

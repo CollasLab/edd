@@ -3,6 +3,7 @@ from collections import Counter
 from enriched_domain_caller import max_segments
 import itertools
 import pandas as pa
+import sys
 
 class MonteCarlo(object):
     """
@@ -44,8 +45,10 @@ class MonteCarlo(object):
         return segment_value_count
 
     def __call__(self, i):
-        print 'iteration:', i
-        return self.trial()
+        res = self.trial()
+        sys.stdout.write('.')
+        sys.stdout.flush()
+        return res
 
 def get_sig_limit(obs, mc, fdr_lim):
     '''
@@ -54,6 +57,7 @@ def get_sig_limit(obs, mc, fdr_lim):
     FDR(score) is computed as sum(freq(H0_i)) / sum(freq(Obs_i))
       for i from score to max_score
     '''
+    print 'Filtering significant peaks.',
     def cumulative_prct(xs):
         return xs[::-1].cumsum()[::-1] / float(xs.sum())
 
@@ -83,4 +87,5 @@ def get_sig_limit(obs, mc, fdr_lim):
 
     fdr = h0_prct / obs_prct
     lim = fdr[(fdr < fdr_lim)].index[0]
+    print 'Done'
     return lim

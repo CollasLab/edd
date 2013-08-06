@@ -10,6 +10,7 @@ from collections import namedtuple, Counter, defaultdict
 bed = namedtuple('BedGraph', 'chrom start end score')
 
 def read_scores(bedgraph, legal_chroms, input_scale_factor=1.05):
+    print 'Processing input:'
     bedcnt = namedtuple('BedCnt', 'chrom start end ip_cnt input_cnt')
 
     nlines = 0
@@ -35,9 +36,9 @@ def read_scores(bedgraph, legal_chroms, input_scale_factor=1.05):
 
 
     cnt_ratio = float(ip_sum) / input_sum
-    print 'sum_ip_cnt / sum_input_cnt:', cnt_ratio
+    print '\tsum_ip_cnt / sum_input_cnt:', cnt_ratio
     scale_factor = cnt_ratio * input_scale_factor
-    print 'ratio * input_scale_factor = %.2f * %.2f = %.2f' % (cnt_ratio, input_scale_factor, scale_factor)
+    print '\tratio * input_scale_factor = %.2f * %.2f = %.2f' % (cnt_ratio, input_scale_factor, scale_factor)
     chromd = defaultdict(list)
     for x in cnts:
         scaled_input = x.input_cnt * scale_factor
@@ -47,6 +48,7 @@ def read_scores(bedgraph, legal_chroms, input_scale_factor=1.05):
     return bin_size, chromd
 
 def write_segments(of, spc, segment_cutoff=1):
+    print 'Saving significant peaks.',
     for chrom in sorted(spc):
         segments = spc[chrom]
         segments.sort(key=operator.itemgetter(1)) # sort by start index
@@ -56,6 +58,7 @@ def write_segments(of, spc, segment_cutoff=1):
                                     str(segment.end),
                                     str(segment.score))))
                 of.write('\n')
+    print 'Done'
 
 def parse_chrom_filter(xs, prefix=''):
     chroms = []
@@ -69,17 +72,26 @@ def parse_chrom_filter(xs, prefix=''):
 
 def as_chrom_sizes(scores_per_chrom):
     chrom_sizes = {}
+    npos_tot, ntot_tot = 0., 0.
     for chrom, spc in scores_per_chrom.items():
         ntot = len(spc)
         npos = sum(x.score for x in spc if x.score == 1)
         chrom_sizes[chrom] = (npos, ntot)
+        npos_tot += npos
+        ntot_tot += ntot
+    r = float(npos_tot) / ntot_tot
+    print '\tPositive bin ratio is: %.2f' % r
+    assert r < 0.5, "Positive bin ratio must be less than 0.5"
     return chrom_sizes
 
 def monte_carlo(chrom_sizes, niter=4, nprocs=4):
     counts = Counter()
     mc = MonteCarlo(chrom_sizes)
     m = multiprocessing.Pool(nprocs)
+    sys.stdout.write('Performing %d monte carlo trials: ' % niter)
+    sys.stdout.flush()
     xs = m.map(mc, range(niter))
+    sys.stdout.write('\nDone\n')
     for x in xs:
         counts.update(x)
     return counts
@@ -107,7 +119,7 @@ if __name__ == '__main__':
     bin_size, scores_per_chrom = read_scores(args.count_file, legal_chroms,
                                              input_scale_factor=args.input_scale_factor)
     chrom_sizes = as_chrom_sizes(scores_per_chrom)
-
+    print 'Done'
     mc_res = monte_carlo(chrom_sizes, niter=args.num_trials, nprocs=args.nprocs)
     obs_res = obs_results(scores_per_chrom)
     fdr_score_lim = get_sig_limit(obs_res, mc_res, fdr_lim=args.fdr)
