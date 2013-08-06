@@ -5,7 +5,7 @@ import argparse
 import operator
 import multiprocessing
 import numpy as np
-from collections import namedtuple, Counter, defaultdict
+from collections import namedtuple, defaultdict
 
 bed = namedtuple('BedGraph', 'chrom start end score')
 
@@ -84,8 +84,12 @@ def as_chrom_sizes(scores_per_chrom):
     assert r < 0.5, "Positive bin ratio must be less than 0.5"
     return chrom_sizes
 
+def update_manual_counter(c, d):
+    for k, v in d.items():
+        c[k] += v
+
 def monte_carlo(chrom_sizes, niter=4, nprocs=4):
-    counts = Counter()
+    counts = defaultdict(int)
     mc = MonteCarlo(chrom_sizes)
     m = multiprocessing.Pool(nprocs)
     sys.stdout.write('Performing %d monte carlo trials: ' % niter)
@@ -93,7 +97,7 @@ def monte_carlo(chrom_sizes, niter=4, nprocs=4):
     xs = m.map(mc, range(niter))
     sys.stdout.write('\nDone\n')
     for x in xs:
-        counts.update(x)
+        update_manual_counter(counts, x)
     return counts
 
 def obs_results(scores_per_chrom):

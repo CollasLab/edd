@@ -1,9 +1,16 @@
 import numpy as np
-from collections import Counter
+from collections import defaultdict
 from enriched_domain_caller import max_segments
 import itertools
 import pandas as pa
 import sys
+
+def create_manual_counter(xs=None):
+    c = defaultdict(int)
+    if xs is not None:
+        for x in xs:
+            c[x] += 1
+    return c
 
 class MonteCarlo(object):
     """
@@ -37,7 +44,7 @@ class MonteCarlo(object):
         return npos, ntot
 
     def trial(self):
-        segment_value_count = Counter()
+        segment_value_count = create_manual_counter()
         p = self.__generate_permutation()
         for chrom, xs in p.items():
             for segment in max_segments(xs):
@@ -77,7 +84,7 @@ def get_sig_limit(obs, mc, fdr_lim):
         return pa.concat([a, s])
     scores = [x.score for x in itertools.chain.from_iterable(obs.values())]
     h0 = pa.Series(mc)
-    s = pa.Series(Counter(scores))
+    s = pa.Series(create_manual_counter(scores))
     obs_prct = make_dense(cumulative_prct(s))
     h0_prct = make_dense(cumulative_prct(h0))
     if len(h0_prct) > len(obs_prct):
