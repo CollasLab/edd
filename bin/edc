@@ -107,7 +107,7 @@ def obs_results(scores_per_chrom):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('count_file', type=argparse.FileType('r'))
-    parser.add_argument('-o', '--output-file', type=argparse.FileType('w'), default='-')
+    parser.add_argument('output_file', type=argparse.FileType('w'))
     parser.add_argument('-f', '--chrom-filter', nargs='+', default=['X', 'Y', 'MT', '1-22'])
     parser.add_argument('-n', '--num-trials', type=int, default=100)
     parser.add_argument('-p', '--nprocs', type=int, default=4)
