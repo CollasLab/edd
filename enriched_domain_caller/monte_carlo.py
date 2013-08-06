@@ -87,5 +87,5 @@ def get_sig_limit(obs, mc, fdr_lim):
 
     fdr = h0_prct / obs_prct
     lim = fdr[(fdr < fdr_lim)].index[0]
-    print 'Done'
+    print 'Limit is %d. Done' % lim
     return lim
