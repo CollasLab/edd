@@ -5,6 +5,7 @@ import argparse
 import operator
 import multiprocessing
 import numpy as np
+import logging
 from collections import namedtuple, Counter, defaultdict
 
 bed = namedtuple('BedGraph', 'chrom start end score')
@@ -22,11 +23,13 @@ def read_scores(bedgraph, legal_chroms, input_scale_factor=1.05):
         parts = line.split()
         start, end = int(parts[1]), int(parts[2])
         length = end - start
+        chrom = parts[0]
         if bin_size is None:
             bin_size = length
-        else:
-            assert bin_size == length
-        chrom = parts[0]
+        elif bin_size != length:
+            logging.warning('non-uniform binsize on chromosome %s (%d vs %d)' % (chrom, bin_size, length))
+
+
         if legal_chroms is None or chrom in legal_chroms:
             ip_cnt = int(parts[3])
             input_cnt = int(parts[4])
