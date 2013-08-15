@@ -27,13 +27,9 @@ def read_scores(bedgraph, legal_chroms, input_scale_factor=1.05):
         chrom = parts[0]
         if bin_size is None:
             bin_size = length
-        elif bin_size != length:
-            logging.warning('non-uniform binsize on chromosome %s (%d vs %d)' % (chrom, bin_size, length))
-
-
         if legal_chroms is None or chrom in legal_chroms:
-            ip_cnt = int(parts[3])
-            input_cnt = int(parts[4])
+            ip_cnt = float(parts[3])
+            input_cnt = float(parts[4])
             ip_sum += ip_cnt
             input_sum += input_cnt
             cnts.append(bedcnt(chrom, start, end, ip_cnt, input_cnt))
