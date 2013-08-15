@@ -6,6 +6,7 @@ import operator
 import multiprocessing
 import numpy as np
 import logging
+import itertools
 from collections import namedtuple, Counter, defaultdict
 
 bed = namedtuple('BedGraph', 'chrom start end score')
@@ -90,24 +91,27 @@ def as_chrom_sizes(scores_per_chrom):
     return chrom_sizes
 
 def monte_carlo(chrom_sizes, niter=4, nprocs=4):
-    counts = Counter()
     mc = MonteCarlo(chrom_sizes)
     m = multiprocessing.Pool(nprocs)
     sys.stdout.write('Performing %d monte carlo trials: ' % niter)
     sys.stdout.flush()
     xs = m.map(mc, range(niter))
     sys.stdout.write('\nDone\n')
-    for x in xs:
-        counts.update(x)
-    return counts
+    return np.sort(xs)
 
-def obs_results(scores_per_chrom):
+def obs_results(scores_per_chrom, remove_trivial_peaks=lambda x: x):
     segments_per_chrom = {}
     for k,v in scores_per_chrom.items():
         xs = max_segments([x.score for x in v])
         segments_per_chrom[k] = [bed(k, v[x.from_idx].start,
                                      v[x.to_idx].end, x.score) for x in xs]
-    return segments_per_chrom
+    return remove_trivial_peaks(segments_per_chrom)
+
+def filter_smaller_than_1sd_from_mean(d):
+    scores = np.array([x.score for x in itertools.chain.from_iterable(d.values())])
+    lim = scores.mean() + scores.std()
+    return {k:[x for x in v if x.score > lim]
+            for k, v in d.items()}
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -117,6 +121,8 @@ if __name__ == '__main__':
     parser.add_argument('-n', '--num-trials', type=int, default=100)
     parser.add_argument('-p', '--nprocs', type=int, default=4)
     parser.add_argument('-l', '--fdr', type=float, default=0.05)
+    parser.add_argument('--only-monte-carlo', action='store_true')
+    parser.add_argument('--only-observed-results', action='store_true')
     parser.add_argument('--input-scale-factor', type=float, default=1.05)
 
     args = parser.parse_args(sys.argv[1:])
@@ -125,7 +131,19 @@ if __name__ == '__main__':
                                              input_scale_factor=args.input_scale_factor)
     chrom_sizes = as_chrom_sizes(scores_per_chrom)
     print 'Done'
+    obs_res = obs_results(scores_per_chrom,
+                          remove_trivial_peaks=filter_smaller_than_1sd_from_mean)
+    obs = [x.score for x in itertools.chain.from_iterable(obs_res.values())]
+    if args.only_observed_results:
+        print 'saving observed results as numpy binary file.'
+        np.save(args.output_file, np.array(obs))
+        sys.exit(1)
     mc_res = monte_carlo(chrom_sizes, niter=args.num_trials, nprocs=args.nprocs)
-    obs_res = obs_results(scores_per_chrom)
-    fdr_score_lim = get_sig_limit(obs_res, mc_res, fdr_lim=args.fdr)
+    if args.only_monte_carlo:
+        print 'saving monte carlo results as numpy binary file.'
+        np.save(args.output_file, mc_res)
+        sys.exit(1)
+
+    fdr_score_lim = get_sig_limit(obs, mc_res, fdr_lim=args.fdr)
+    print 'fdr_score_lim',fdr_score_lim
     write_segments(args.output_file, obs_res, segment_cutoff=fdr_score_lim)
