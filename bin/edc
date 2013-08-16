@@ -1,90 +1,11 @@
 #!/usr/bin/env python
-from enriched_domain_caller import max_segments, MonteCarlo, get_sig_limit
+from enriched_domain_caller import max_segments, MonteCarlo, get_sig_limit, util
 import sys
 import argparse
-import operator
 import multiprocessing
 import numpy as np
-import logging
 import itertools
-from collections import namedtuple, Counter, defaultdict
 
-bed = namedtuple('BedGraph', 'chrom start end score')
-
-def read_scores(bedgraph, legal_chroms, input_scale_factor=1.05):
-    print 'Processing input:'
-    bedcnt = namedtuple('BedCnt', 'chrom start end ip_cnt input_cnt')
-
-    nlines = 0
-    bin_size = None
-    ip_sum, input_sum = 0, 0
-    cnts = []
-    for line in bedgraph:
-        nlines += 1
-        parts = line.split()
-        start, end = int(parts[1]), int(parts[2])
-        length = end - start
-        chrom = parts[0]
-        if bin_size is None:
-            bin_size = length
-        if legal_chroms is None or chrom in legal_chroms:
-            ip_cnt = float(parts[3])
-            input_cnt = float(parts[4])
-            ip_sum += ip_cnt
-            input_sum += input_cnt
-            cnts.append(bedcnt(chrom, start, end, ip_cnt, input_cnt))
-
-
-    cnt_ratio = float(ip_sum) / input_sum
-    print '\tsum_ip_cnt / sum_input_cnt:', cnt_ratio
-    scale_factor = cnt_ratio * input_scale_factor
-    print '\tratio * input_scale_factor = %.2f * %.2f = %.2f' % (cnt_ratio, input_scale_factor, scale_factor)
-    chromd = defaultdict(list)
-    for x in cnts:
-        scaled_input = x.input_cnt * scale_factor
-        bin_score = 1 if x.ip_cnt > scaled_input else -1
-        chromd[x.chrom].append(bed(x.chrom, x.start, x.end, bin_score))
-
-    return bin_size, chromd
-
-def write_segments(of, spc, segment_cutoff=1):
-    print 'Saving significant peaks.',
-    for chrom in sorted(spc):
-        segments = spc[chrom]
-        segments.sort(key=operator.itemgetter(1)) # sort by start index
-        for segment in segments:
-            if segment.score >= segment_cutoff:
-                of.write('\t'.join((chrom, str(segment.start),
-                                    str(segment.end),
-                                    str(segment.score))))
-                of.write('\n')
-    print 'Done'
-
-def parse_chrom_filter(xs, prefix=''):
-    if xs is None:
-        return None
-    chroms = []
-    for x in xs:
-        if '-' in x:
-            start, end = map(int, x.split('-'))
-            chroms.extend(range(start, end + 1))
-        else:
-            chroms.append(x)
-    return set('%s%s' % (prefix, x) for x in chroms)
-
-def as_chrom_sizes(scores_per_chrom):
-    chrom_sizes = {}
-    npos_tot, ntot_tot = 0., 0.
-    for chrom, spc in scores_per_chrom.items():
-        ntot = len(spc)
-        npos = sum(x.score for x in spc if x.score == 1)
-        chrom_sizes[chrom] = (npos, ntot)
-        npos_tot += npos
-        ntot_tot += ntot
-    r = float(npos_tot) / ntot_tot
-    print '\tPositive bin ratio is: %.2f' % r
-    assert r < 0.5, "Positive bin ratio must be less than 0.5"
-    return chrom_sizes
 
 def monte_carlo(chrom_sizes, niter=4, nprocs=4):
     mc = MonteCarlo(chrom_sizes)
@@ -99,7 +20,7 @@ def obs_results(scores_per_chrom, remove_trivial_peaks=lambda x: x):
     segments_per_chrom = {}
     for k,v in scores_per_chrom.items():
         xs = max_segments([x.score for x in v])
-        segments_per_chrom[k] = [bed(k, v[x.from_idx].start,
+        segments_per_chrom[k] = [util.bed(k, v[x.from_idx].start,
                                      v[x.to_idx].end, x.score) for x in xs]
     return remove_trivial_peaks(segments_per_chrom)
 
@@ -114,18 +35,19 @@ if __name__ == '__main__':
     parser.add_argument('count_file', type=argparse.FileType('r'))
     parser.add_argument('output_file', type=argparse.FileType('w'))
     parser.add_argument('-f', '--chrom-filter', nargs='+', default=None)
+    parser.add_argument('--chrom-filter-prefix', default='')
     parser.add_argument('-n', '--num-trials', type=int, default=100)
     parser.add_argument('-p', '--nprocs', type=int, default=4)
     parser.add_argument('-l', '--fdr', type=float, default=0.05)
     parser.add_argument('--only-monte-carlo', action='store_true')
     parser.add_argument('--only-observed-results', action='store_true')
-    parser.add_argument('--input-scale-factor', type=float, default=1.05)
+    parser.add_argument('--ratio-of-positive-bins', type=float, default=.40)
 
     args = parser.parse_args(sys.argv[1:])
-    legal_chroms = parse_chrom_filter(args.chrom_filter)
-    bin_size, scores_per_chrom = read_scores(args.count_file, legal_chroms,
-                                             input_scale_factor=args.input_scale_factor)
-    chrom_sizes = as_chrom_sizes(scores_per_chrom)
+    legal_chroms = util.parse_chrom_filter(args.chrom_filter, prefix=args.chrom_filter_prefix)
+    scores_per_chrom = util.read_scores(args.count_file, legal_chroms,
+                                             pos_bin_ratio=args.ratio_of_positive_bins)
+    chrom_sizes = util.as_chrom_sizes(scores_per_chrom)
     print 'Done'
     obs_res = obs_results(scores_per_chrom,
                           remove_trivial_peaks=filter_smaller_than_1sd_from_mean)
@@ -142,4 +64,4 @@ if __name__ == '__main__':
 
     fdr_score_lim = get_sig_limit(obs, mc_res, fdr_lim=args.fdr)
     print 'fdr_score_lim',fdr_score_lim
-    write_segments(args.output_file, obs_res, segment_cutoff=fdr_score_lim)
+    util.write_segments(args.output_file, obs_res, segment_cutoff=fdr_score_lim)
