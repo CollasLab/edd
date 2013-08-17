@@ -73,6 +73,4 @@ def get_sig_limit(obs, mc, fdr_lim):
     lim_idx = largest_significant_fdr_corr_pval(pvals, fdr_lim)
 
     fdr_lim = obs[lim_idx]
-    import ipdb
-    ipdb.set_trace()
     return fdr_lim

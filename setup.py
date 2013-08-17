@@ -11,7 +11,8 @@ setup(name='enriched_domain_caller',
       author='Eivind G. Lund',
       author_email='e.g.lund@medisin.uio.no',
       packages=['enriched_domain_caller'],
-      scripts=['bin/edc'],
+      scripts=['bin/edc',
+               'bin/edc-debug'],
             install_requires=[
           'numpy',
           'pandas'
