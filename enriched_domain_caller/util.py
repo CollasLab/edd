@@ -162,10 +162,10 @@ def write_segments(of, spc, segment_cutoff=1):
     print 'Done'
 
 def parse_chrom_filter(xs, prefix=''):
-    if prefix == 'hg19':
-        return hg19_chromfilter
     if xs is None:
         return None
+    if xs[0] == 'hg19':
+        return hg19_chromfilter
     chroms = []
     for x in xs:
         if '-' in x:

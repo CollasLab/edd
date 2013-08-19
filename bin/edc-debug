@@ -28,7 +28,6 @@ def print_log2_binary(args):
             bin_score = 1 if x.score >= lim_score else -1
             args.output_file.write('%s\t%s\t%s\t%.2f\n' % (x.chrom, x.start, x.end, bin_score))
 
-
 def print_log2_ratio(args):
     bins = util.read_counts(args.count_file, None)
     input_scale_factor = util.get_input_scale_factor(bins)
