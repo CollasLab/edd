@@ -1,6 +1,12 @@
+import itertools
+import numpy as np
+from max_segments import max_segments
 from collections import namedtuple, defaultdict
 import math
 import operator
+import multiprocessing
+import monte_carlo as mcarlo
+import sys
 
 hg19_chromfilter = set(['chrY', 'chrX', 'chr13', 'chr12', 'chr11', 'chr10', 'chr17', 'chr16', 'chr15', 'chr14', 'chr19', 'chr18', 'chr22', 'chr20', 'chr21', 'chr7', 'chr6', 'chr5', 'chr4', 'chr3', 'chr2', 'chr1', 'chr9', 'chr8'])
 bed = namedtuple('BedGraph', 'chrom start end score')
@@ -10,22 +16,6 @@ def log2_score(pos, neg):
     if pos == 0 or neg == 0:
         return -5 # default negative for missing values
     return math.log(float(pos) / neg)
-        
-
-def obs_results(scores_per_chrom):
-    segments_per_chrom = {}
-    for k,v in scores_per_chrom.items():
-        xs = max_segments([x.score for x in v])
-        segments_per_chrom[k] = [bed(k, v[x.from_idx].start,
-                                     v[x.to_idx].end, x.score) for x in xs]
-    return segments_per_chrom
-
-def filter_smaller_than_1sd_from_mean(d):
-    scores = np.array([x.score for x in itertools.chain.from_iterable(d.values())])
-    lim = scores.mean() + scores.std()
-    return {k:[x for x in v if x.score > lim]
-            for k, v in d.items()}
-
 
 def ci_lower_bound(pos, neg):
     '''
@@ -41,6 +31,53 @@ def ci_lower_bound(pos, neg):
     z = 1.96 # for a 95% confidence interval
     pratio = float(pos) / n
     return (pratio + z*z/(2*n) - z * math.sqrt((pratio*(1-pratio)+z*z/(4*n))/n))/(1+z*z/n)
+
+scoring_functions = {
+    'log2-ratio': log2_score,
+    'CI-lower': ci_lower_bound
+    }
+
+def monte_carlo(chrom_sizes, niter=4, nprocs=4):
+    mc = mcarlo.MonteCarlo(chrom_sizes)
+    sys.stdout.write('Performing %d monte carlo trials: ' % niter)
+    sys.stdout.flush()
+    if nprocs > 1:
+        m = multiprocessing.Pool(nprocs)
+        xs = m.map(mc, range(niter))
+
+    else:
+        xs = [mc(i) for i in range(niter)]
+    sys.stdout.write('\nDone\n')
+    return np.sort(xs)
+
+def score_file_to_bins(fname):
+    '''ipython'''
+    d = defaultdict(list)
+    for line in open(fname):
+        parts = line.split()
+        x = bed(parts[0], int(parts[1]), int(parts[2]), float(parts[3]))
+        d[x.chrom].append(x)
+    return d
+
+
+def bins_to_max_segments_bed(chrom, v):
+    xs = max_segments([x.score for x in v])
+    return [bed(chrom, v[x.from_idx].start,
+                v[x.to_idx].end, x.score) for x in xs]
+
+def obs_results(scores_per_chrom):
+    segments_per_chrom = {}
+    for k,v in scores_per_chrom.items():
+        segments_per_chrom[k] = bins_to_max_segments_bed(k, v)
+    return segments_per_chrom
+
+def filter_smaller_than_Nsd_from_mean(d, N):
+    scores = np.array([x.score for x in itertools.chain.from_iterable(d.values())])
+    lim = scores.mean() + N * scores.std()
+    return {k:[x for x in v if x.score > lim]
+            for k, v in d.items()}
+
+
 
 def read_counts(bedgraph, legal_chroms):
     bins = []
@@ -95,15 +132,17 @@ def get_bedgraph_list(bs, lim_score):
         bs.append(b)
     return b
 
-def read_scores(bedgraph, legal_chroms, pos_bin_ratio):
+def read_scores(bedgraph, legal_chroms, pos_bin_ratio, scorefunc):
+    if isinstance(scorefunc, str):
+        scorefunc = scoring_functions[scorefunc]
     bins = read_counts(bedgraph, legal_chroms)
     input_scale_factor = get_input_scale_factor(bins)
     nbins = normalize_bins(bins, input_scale_factor)
-    sbins = score_bins(nbins, ci_lower_bound)
+    sbins = score_bins(nbins, scorefunc)
     lim_score = get_limit_score(sbins, pos_bin_ratio)
 
     chromd = defaultdict(list)
-    for x in binary_bins:
+    for x in sbins:
         bin_score = 1 if x.score >= lim_score else -1
         chromd[x.chrom].append(bed(x.chrom, x.start, x.end, bin_score))
 
@@ -123,6 +162,8 @@ def write_segments(of, spc, segment_cutoff=1):
     print 'Done'
 
 def parse_chrom_filter(xs, prefix=''):
+    if prefix == 'hg19':
+        return hg19_chromfilter
     if xs is None:
         return None
     chroms = []
@@ -147,3 +188,12 @@ def as_chrom_sizes(scores_per_chrom):
     print '\tPositive bin ratio is: %.2f' % r
     assert r < 0.5, "Positive bin ratio must be less than 0.5"
     return chrom_sizes
+
+def load_score_file(fname):
+    '''ipython debug'''
+    d = defaultdict(list)
+    for line in open(fname):
+        parts = line.split()
+        x = bed(parts[0], int(parts[1]), int(parts[2]), float(parts[3]))
+        d[x.chrom].append(x)
+    return d

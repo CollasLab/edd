@@ -25,11 +25,12 @@ class MonteCarlo(object):
         self._mc_arr = a
 
     def __generate_permutation(self):
-        np.random.shuffle(self._mc_arr)
+        a = self._mc_arr#.copy()
+        np.random.shuffle(a)
         chrom_lengths = [x[1] for x in self._chrom_sizes.values()]
         # last interval is implicitly known (rest of array), so it's left out
         split_idx = np.cumsum(chrom_lengths[:-1])
-        xs = np.split(self._mc_arr, split_idx)
+        xs = np.split(a, split_idx)
         return dict(zip(self._chrom_sizes, xs))
 
     def __get_gw_stats(self, chrom_sizes):
@@ -46,6 +47,7 @@ class MonteCarlo(object):
         return max(segment_value_count.keys())
 
     def __call__(self, i):
+        np.random.seed()
         res = self.trial()
         sys.stdout.write('.')
         sys.stdout.flush()

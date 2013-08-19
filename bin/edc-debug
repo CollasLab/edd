@@ -1,7 +1,16 @@
+#!/usr/bin/env python
 from enriched_domain_caller import util
 from collections import defaultdict
 import sys
 import argparse
+
+def bins_to_segments(args):
+    bins = util.score_file_to_bins(args.bin_file.name)
+    for chrom, xs in bins.items():
+        segments = util.bins_to_max_segments_bed(chrom, xs)
+        for x in segments:
+            if x.score > args.cutoff:
+                args.output_file.write('%s\t%s\t%s\t%.2f\n' % (x.chrom, x.start, x.end, x.score))
 
 def print_log2_binary(args):
     bins = util.read_counts(args.count_file, None)
@@ -82,6 +91,12 @@ if __name__ == '__main__':
     p_log2_binary.add_argument('output_file', type=argparse.FileType('w'))
     p_log2_binary.add_argument('-r', '--ratio-of-positive-bins', type=float, default=.40)
     p_log2_binary.set_defaults(func=print_log2_binary)
+
+    p_bins_to_segments = subparsers.add_parser('bins-to-segments', help=('get all intervals above cutoff.'))
+    p_bins_to_segments.add_argument('bin_file', type=argparse.FileType('r'))
+    p_bins_to_segments.add_argument('output_file', type=argparse.FileType('w'))
+    p_bins_to_segments.add_argument('-c', '--cutoff', type=int, default=10)
+    p_bins_to_segments.set_defaults(func=bins_to_segments)
 
 
     args = parser.parse_args(sys.argv[1:])

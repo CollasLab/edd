@@ -1,22 +1,10 @@
 #!/usr/bin/env python
-from enriched_domain_caller import max_segments, MonteCarlo, get_sig_limit, util
+from enriched_domain_caller import get_sig_limit, util
 import sys
 import argparse
-import multiprocessing
+
 import numpy as np
 import itertools
-import ipdb
-
-
-def monte_carlo(chrom_sizes, niter=4, nprocs=4):
-    mc = MonteCarlo(chrom_sizes)
-    m = multiprocessing.Pool(nprocs)
-    sys.stdout.write('Performing %d monte carlo trials: ' % niter)
-    sys.stdout.flush()
-    xs = m.map(mc, range(niter))
-    sys.stdout.write('\nDone\n')
-    return np.sort(xs)
-
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -30,29 +18,30 @@ if __name__ == '__main__':
     parser.add_argument('--only-monte-carlo', action='store_true')
     parser.add_argument('--only-observed-results', action='store_true')
     parser.add_argument('--ratio-of-positive-bins', type=float, default=.40)
-
+    parser.add_argument('--bin-score-function', choices=['log2-ratio', 'CI-lower'],
+                        default='log2-ratio')
     args = parser.parse_args(sys.argv[1:])
 
-    with ipdb.launch_ipdb_on_exception():
-        legal_chroms = util.parse_chrom_filter(args.chrom_filter, prefix=args.chrom_filter_prefix)
-        scores_per_chrom = util.read_scores(args.count_file, legal_chroms,
-                                                 pos_bin_ratio=args.ratio_of_positive_bins)
-        chrom_sizes = util.as_chrom_sizes(scores_per_chrom)
-        print 'Done'
-        obs_res_full = util.obs_results(scores_per_chrom)
-        obs_res = util.filter_smaller_than_1sd_from_mean(obs_res_full)
-        obs = [x.score for x in itertools.chain.from_iterable(obs_res.values())]
-        if args.only_observed_results:
-            print 'saving observed results as numpy binary file.'
-            obs_full = [x.score for x in itertools.chain.from_iterable(obs_res_full.values())]
-            np.save(args.output_file, np.array(obs_full))
-            sys.exit(1)
-        mc_res = monte_carlo(chrom_sizes, niter=args.num_trials, nprocs=args.nprocs)
-        if args.only_monte_carlo:
-            print 'saving monte carlo results as numpy binary file.'
-            np.save(args.output_file, mc_res)
-            sys.exit(1)
-        fdr_score_lim = get_sig_limit(obs, mc_res, fdr_lim=args.fdr)
+    legal_chroms = util.parse_chrom_filter(args.chrom_filter, prefix=args.chrom_filter_prefix)
+    scores_per_chrom = util.read_scores(args.count_file, legal_chroms,
+                                             pos_bin_ratio=args.ratio_of_positive_bins,
+                                             scorefunc=args.bin_score_function)
+    chrom_sizes = util.as_chrom_sizes(scores_per_chrom)
+    print 'Done'
+    obs_res_full = util.obs_results(scores_per_chrom)
+    obs_res = util.filter_smaller_than_Nsd_from_mean(obs_res_full, 3)
+    obs = [x.score for x in itertools.chain.from_iterable(obs_res.values())]
+    if args.only_observed_results:
+        print 'saving observed results as numpy binary file.'
+        obs_full = [x.score for x in itertools.chain.from_iterable(obs_res_full.values())]
+        np.save(args.output_file, np.array(obs_full))
+        sys.exit(1)
+    mc_res = util.monte_carlo(chrom_sizes, niter=args.num_trials, nprocs=args.nprocs)
+    if args.only_monte_carlo:
+        print 'saving monte carlo results as numpy binary file.'
+        np.save(args.output_file, mc_res)
+        sys.exit(1)
+    fdr_score_lim = get_sig_limit(obs, mc_res, fdr_lim=args.fdr)
 
-        print 'fdr_score_lim',fdr_score_lim
-        util.write_segments(args.output_file, obs_res, segment_cutoff=fdr_score_lim)
+    print 'fdr_score_lim',fdr_score_lim
+    util.write_segments(args.output_file, obs_res, segment_cutoff=fdr_score_lim)
