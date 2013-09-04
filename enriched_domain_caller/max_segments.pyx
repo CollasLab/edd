@@ -54,10 +54,12 @@ cdef int max_segments_impl(int *xs, int len_xs,
     return k
 
 def max_segments(xs):
+    # xs is a series of scores where xs[i] is left of xs[i+1]
     cdef int *cxs = <int*> malloc(len(xs)*cython.sizeof(int))
     cdef segment *buf = NULL
     for i, x in enumerate(xs):
         cxs[i] = x
+    # k is the number of potential peaks
     k = max_segments_impl(cxs, len(xs), &buf, 0)
     free(cxs)
     res = []
