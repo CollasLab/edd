@@ -5,9 +5,9 @@ cimport cython
 max_segment_struct = namedtuple('MaxSegment', 'score from_idx to_idx')
 
 cdef struct segment:
-    int I
-    int L
-    int R
+    float I
+    float L
+    float R
     int lidx
     int ridx
 
@@ -28,15 +28,13 @@ cdef int consider(segment *s, segment *buf, int k):
 cdef enum:
     N = 1000
 
-cdef int max_segments_impl(int *xs, int len_xs,
+cdef int max_segments_impl(float *xs, int len_xs,
                            segment **buf, int len_buf):
-    cdef int csum = 0
+    cdef float csum = 0
     cdef int k = 0
     cdef int i
     cdef segment s
-    cdef int x
-    cdef int Lk
-    cdef int Rk
+    cdef float x, Lk, Rk
     for i in range(len_xs):
         x = xs[i]
         Lk = csum
@@ -55,7 +53,7 @@ cdef int max_segments_impl(int *xs, int len_xs,
 
 def max_segments(xs):
     # xs is a series of scores where xs[i] is left of xs[i+1]
-    cdef int *cxs = <int*> malloc(len(xs)*cython.sizeof(int))
+    cdef float *cxs = <float*> malloc(len(xs)*cython.sizeof(float))
     cdef segment *buf = NULL
     for i, x in enumerate(xs):
         cxs[i] = x
