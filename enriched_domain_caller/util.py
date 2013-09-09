@@ -78,6 +78,8 @@ def obs_results(scores_per_chrom):
 
 def filter_smaller_than_Nsd_from_mean(d, N):
     scores = np.array([x.score for x in itertools.chain.from_iterable(d.values())])
+    log.notice('%d potential peaks are FDR corrected (%.2f STD[%.2f] from mean[%.2f])' % (
+        nd, N, scores.std(), scores.mean()))
     lim = scores.mean() + N * scores.std()
     return filter_smaller_than_lim(d, lim)
 
@@ -85,10 +87,7 @@ def filter_smaller_than_lim(d, lim):
     d = {k:[x for x in v if x.score > lim]
          for k, v in d.items()}
     nd = sum(len(v) for v in d.values())
-    log.notice('%d potential peaks are FDR corrected (%.2f STD[%.2f] from mean[%.2f])' % (nd, N, scores.std(), scores.mean()))
     return d
-
-
 
 def read_counts(bedgraph, legal_chroms):
     bins = []
@@ -153,7 +152,7 @@ def compute_neg_score(sbins, max_pos_ratio):
 def get_limit_score(bs, pos_bin_score_ratio):
     bs = list(bs)
     bs.sort(reverse=True, key=operator.attrgetter('score'))
-    lim_score_idx = int(len(bs) * max_pos_bin_score_ratio)
+    lim_score_idx = int(len(bs) * pos_bin_score_ratio)
     while True:
         lim_score = bs[lim_score_idx].score
         if lim_score > 0:
@@ -204,7 +203,6 @@ def read_scores(bedgraph, legal_chroms, scorefunc):
     lim_score = optimize_score_cutoff(np.array([x.score for x in sbins]))
     pos_score = 1
     neg_score = -1 #compute_neg_score(sbins, max_pos_ratio=0.4)
-
     chromd = defaultdict(list)
     for x in sbins:
         bin_score = 1 if x.score > lim_score else neg_score
@@ -243,7 +241,7 @@ def as_chrom_sizes(scores_per_chrom):
     npos_tot, ntot_tot = 0., 0.
     for chrom, spc in scores_per_chrom.items():
         ntot = len(spc)
-        npos = sum(x.score for x in spc if x.score == 1)
+        npos = sum(x.score for x in spc if x.score > 0)
         chrom_sizes[chrom] = (npos, ntot)
         npos_tot += npos
         ntot_tot += ntot
