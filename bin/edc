@@ -22,19 +22,19 @@ if __name__ == '__main__':
                         default='log2-ratio')
     parser.add_argument('--log-level', default='NOTICE')
     args = parser.parse_args(sys.argv[1:])
-    log_file = args.output_file.name + '.log'
-    log_handler = FileHandler(log_file, level=args.log_level, bubble=True)
-    with log_handler.applicationbound():
-        legal_chroms = util.parse_chrom_filter(args.chrom_filter, prefix=args.chrom_filter_prefix)
-        scores_per_chrom = util.read_scores(args.count_file, legal_chroms,
-                                                 pos_bin_ratio=args.pos_bin_score_ratio,
-                                                 scorefunc=args.bin_score_function)
-        chrom_sizes = util.as_chrom_sizes(scores_per_chrom)
-        obs_res_full = util.obs_results(scores_per_chrom)
-        obs_res = util.filter_smaller_than_Nsd_from_mean(obs_res_full, args.times_std)
-        mc_res = util.monte_carlo(chrom_sizes, niter=args.num_trials, nprocs=args.nprocs)
-        obs = [x.score for x in itertools.chain.from_iterable(obs_res.values())]
-        fdr_score_lim = get_sig_limit(obs, mc_res, fdr_lim=args.fdr)
+    # log_file = args.output_file.name + '.log'
+    # log_handler = FileHandler(log_file, level=args.log_level, bubble=True)
+    # with log_handler.applicationbound():
+    legal_chroms = util.parse_chrom_filter(args.chrom_filter, prefix=args.chrom_filter_prefix)
+    scores_per_chrom = util.read_scores(args.count_file, legal_chroms,
+                                             pos_bin_ratio=args.pos_bin_score_ratio,
+                                             scorefunc=args.bin_score_function)
+    chrom_sizes = util.as_chrom_sizes(scores_per_chrom)
+    obs_res_full = util.obs_results(scores_per_chrom)
+    obs_res = util.filter_smaller_than_Nsd_from_mean(obs_res_full, args.times_std)
+    mc_res = util.monte_carlo(chrom_sizes, niter=args.num_trials, nprocs=args.nprocs)
+    obs = [x.score for x in itertools.chain.from_iterable(obs_res.values())]
+    fdr_score_lim = get_sig_limit(obs, mc_res, fdr_lim=args.fdr)
 
-        log.notice('fdr_score_lim %.2f' % fdr_score_lim)
-        util.write_segments(args.output_file, obs_res, segment_cutoff=fdr_score_lim)
+    log.notice('fdr_score_lim %.2f' % fdr_score_lim)
+    util.write_segments(args.output_file, obs_res, segment_cutoff=fdr_score_lim)
