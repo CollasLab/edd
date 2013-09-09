@@ -16,7 +16,7 @@ if __name__ == '__main__':
     parser.add_argument('-n', '--num-trials', type=int, default=100)
     parser.add_argument('-p', '--nprocs', type=int, default=4)
     parser.add_argument('-l', '--fdr', type=float, default=0.05)
-    parser.add_argument('--pos-bin-score-ratio', type=float, default=.40)
+    #parser.add_argument('--pos-bin-score-ratio', type=float, default=.40)
     parser.add_argument('--times-std', type=float, default=3.0)
     parser.add_argument('--bin-score-function', choices=['log2-ratio', 'CI-lower'],
                         default='log2-ratio')
@@ -27,7 +27,6 @@ if __name__ == '__main__':
     with log_handler.applicationbound():
         legal_chroms = util.parse_chrom_filter(args.chrom_filter, prefix=args.chrom_filter_prefix)
         scores_per_chrom = util.read_scores(args.count_file, legal_chroms,
-                                                 pos_bin_ratio=args.pos_bin_score_ratio,
                                                  scorefunc=args.bin_score_function)
         chrom_sizes = util.as_chrom_sizes(scores_per_chrom)
         obs_res_full = util.obs_results(scores_per_chrom)

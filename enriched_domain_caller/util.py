@@ -169,7 +169,31 @@ def get_bedgraph_list(bs, lim_score):
         bs.append(b)
     return b
 
-def read_scores(bedgraph, legal_chroms, pos_bin_ratio, scorefunc):
+def information_score(bins):
+    '''
+    returns a score that tries to say something
+    about coverage to quality.
+    (we want to cover many high quality bins)
+    '''
+    npos = bins.sum()
+    r = float(npos) / len(bins)
+    expected = r**2 * (len(bins) - 1)
+    observed = np.logical_and(bins[:-1], bins[1:]).sum()
+    information_content = math.log(observed / float(expected))
+    return information_content * npos
+
+
+def optimize_score_cutoff(scores):
+    '''
+    we require the cutoff to be between 0 and mean pos score
+    '''
+    lim = scores[scores > 0].mean()
+    xs = np.linspace(0, lim, 20)
+    ys = np.array([information_score(scores > pos_cutoff)
+                   for pos_cutoff in xs])
+    return (scores > xs[ys.argmax()]).sum() / float(len(scores))
+
+def read_scores(bedgraph, legal_chroms, scorefunc):
     if isinstance(scorefunc, str):
         scorefunc = scoring_functions[scorefunc]
     bins = read_counts(bedgraph, legal_chroms)
@@ -177,10 +201,9 @@ def read_scores(bedgraph, legal_chroms, pos_bin_ratio, scorefunc):
     input_scale_factor = get_input_scale_factor(bins)
     nbins = normalize_bins(bins, input_scale_factor)
     sbins = score_bins(nbins, scorefunc)
-    #lim_score = get_limit_score(sbins, pos_bin_ratio)
-    lim_score = 0.0
+    lim_score = optimize_score_cutoff(np.array([x.score for x in sbins]))
     pos_score = 1
-    neg_score = compute_neg_score(sbins, max_pos_ratio=0.4)
+    neg_score = -1 #compute_neg_score(sbins, max_pos_ratio=0.4)
 
     chromd = defaultdict(list)
     for x in sbins:
