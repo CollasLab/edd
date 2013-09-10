@@ -1,4 +1,6 @@
 import itertools
+import matplotlib.pylab as plt
+import os
 import numpy as np
 from max_segments import max_segments
 from collections import namedtuple, defaultdict
@@ -8,7 +10,8 @@ import multiprocessing
 import monte_carlo as mcarlo
 import sys
 from logbook import Logger
-
+#import ipdb
+verbose_dir = None
 log = Logger('base')
 hg19_chromfilter = set(['chrY', 'chrX', 'chr13', 'chr12', 'chr11', 'chr10', 'chr17', 'chr16', 'chr15', 'chr14', 'chr19', 'chr18', 'chr22', 'chr20', 'chr21', 'chr7', 'chr6', 'chr5', 'chr4', 'chr3', 'chr2', 'chr1', 'chr9', 'chr8'])
 bed = namedtuple('BedGraph', 'chrom start end score')
@@ -80,18 +83,20 @@ def filter_smaller_than_Nsd_from_mean(d, N):
     scores = np.array([x.score for x in itertools.chain.from_iterable(d.values())])
     log.notice('%d potential peaks are FDR corrected (%.2f STD[%.2f] from mean[%.2f])' % (
         len(scores), N, scores.std(), scores.mean()))
+    assert scores.std() > 1.
     lim = scores.mean() + N * scores.std()
     return filter_smaller_than_lim(d, lim)
 
 def filter_smaller_than_lim(d, lim):
-    nd = {k:[x for x in v if x.score > lim]
-         for k, v in d.items()}
     sumd = sum(len(v) for v in d.values())
-    sumnd = sum(len(v) for v in d.values())
     log.notice('peak filter limit is: %d' % lim)
     log.notice('%8d peaks prior to filtering.' % sumd)
+    nd = {k:[x for x in v if x.score > lim]
+          for k, v in d.items()}
+    sumnd = sum(len(v) for v in nd.values())
     log.notice('%8d peaks removed after filtering.' % (sumd - sumnd))
     log.notice('%8d peaks remaining after filtering.' % sumnd)
+    assert sumd > sumnd
     return nd
 
 def read_counts(bedgraph, legal_chroms):
@@ -173,7 +178,43 @@ def get_bedgraph_list(bs, lim_score):
         bs.append(b)
     return b
 
-def read_scores(bedgraph, legal_chroms, pos_bin_ratio, scorefunc):
+def information_score(bins):
+    '''
+    returns a score that tries to say something
+    about coverage to quality.
+    (we want to cover many high quality bins)
+    '''
+    npos = bins.sum()
+    r = float(npos) / len(bins)
+    expected = r**2 * (len(bins) - 1)
+    observed = np.logical_and(bins[:-1], bins[1:]).sum()
+    information_content = math.log(observed / float(expected))
+    return information_content * npos
+
+
+def optimize_score_cutoff(scores):
+    '''
+    we require the cutoff to be between 0 and mean pos score
+    '''
+    lim = scores[scores > 0].mean()
+    log.notice('searching for optimal pos bin ratio lim between 0 and %.3f.' % lim)
+    xs = np.linspace(0, lim, 70)
+    ys = np.array([information_score(scores > pos_cutoff)
+                   for pos_cutoff in xs])
+    if verbose_dir is not None:
+        opath = os.path.join(verbose_dir, 'information_content.png')
+        plt.clf()
+        plt.plot(xs, ys)
+        plt.title('log2(obs / expected) * npos')
+        plt.savefig(opath)
+    lim_value = xs[ys.argmax()]
+    orig_pos_ratio = (scores > 0).sum() / float(len(scores))
+    pos_ratio = (scores > lim_value).sum() / float(len(scores))
+    log.notice('Original positive bin ratio is %.2f' % orig_pos_ratio)
+    log.notice('Adjusted positive bin ratio is %.2f' % pos_ratio)
+    return lim_value
+
+def read_scores(bedgraph, legal_chroms, scorefunc):
     if isinstance(scorefunc, str):
         scorefunc = scoring_functions[scorefunc]
     bins = read_counts(bedgraph, legal_chroms)
@@ -181,8 +222,7 @@ def read_scores(bedgraph, legal_chroms, pos_bin_ratio, scorefunc):
     input_scale_factor = get_input_scale_factor(bins)
     nbins = normalize_bins(bins, input_scale_factor)
     sbins = score_bins(nbins, scorefunc)
-    #lim_score = get_limit_score(sbins, pos_bin_ratio)
-    lim_score = 0.0
+    lim_score = optimize_score_cutoff(np.array([x.score for x in sbins]))
     pos_score = 1
     neg_score = -1 #compute_neg_score(sbins, max_pos_ratio=pos_bin_ratio)
 
@@ -194,16 +234,18 @@ def read_scores(bedgraph, legal_chroms, pos_bin_ratio, scorefunc):
 
 def write_segments(of, spc, segment_cutoff=1):
     log.notice('Saving significant peaks.')
+    cnt = 0
     for chrom in sorted(spc):
         segments = spc[chrom]
         segments.sort(key=operator.itemgetter(1)) # sort by start index
         for segment in segments:
             if segment.score >= segment_cutoff:
+                cnt += 1
                 of.write('\t'.join((chrom, str(segment.start),
                                     str(segment.end),
                                     str(segment.score))))
                 of.write('\n')
-    log.notice('Done')
+    log.notice('Done. Wrote %d peaks.' % cnt)
 
 def parse_chrom_filter(xs, prefix=''):
     if xs is None:
@@ -231,6 +273,8 @@ def as_chrom_sizes(scores_per_chrom):
     r = float(npos_tot) / ntot_tot
     log.notice('\tPositive bin ratio is: %.2f' % r)
     assert r < 0.5, "Positive bin ratio must be less than 0.5"
+    if r < .30:
+        log.warn('Positive bin ratio is very low (%.2f)' % r)
     return chrom_sizes
 
 def load_score_file(fname):
