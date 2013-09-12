@@ -100,6 +100,8 @@ def filter_smaller_than_lim(d, lim):
     return nd
 
 def read_counts(bedgraph, legal_chroms):
+    if isinstance(bedgraph, str):
+        bedgraph = open(bedgraph)
     bins = []
     for line in bedgraph:
         parts = line.split()
@@ -178,7 +180,7 @@ def get_bedgraph_list(bs, lim_score):
         bs.append(b)
     return b
 
-def information_score(bins):
+def information_score_helper(bins):
     '''
     returns a score that tries to say something
     about coverage to quality.
@@ -188,18 +190,21 @@ def information_score(bins):
     r = float(npos) / len(bins)
     expected = r**2 * (len(bins) - 1)
     observed = np.logical_and(bins[:-1], bins[1:]).sum()
-    information_content = math.log(observed / float(expected))
+    information_content = math.log((observed + 1) / float(expected + 1))
     return information_content * npos
 
+def information_score(bins_per_chrom, pos_cutoff):
+    return sum(information_score_helper(x > pos_cutoff) for x in bins_per_chrom)
 
 def optimize_score_cutoff(scores):
     '''
     we require the cutoff to be between 0 and mean pos score
     '''
-    lim = scores[scores > 0].mean()
+    all_scores = np.concatenate(scores)
+    lim = all_scores[all_scores > 0].mean()
     log.notice('searching for optimal pos bin ratio lim between 0 and %.3f.' % lim)
     xs = np.linspace(0, lim, 70)
-    ys = np.array([information_score(scores > pos_cutoff)
+    ys = np.array([information_score(scores, pos_cutoff)
                    for pos_cutoff in xs])
     if verbose_dir is not None:
         opath = os.path.join(verbose_dir, 'information_content.png')
@@ -208,8 +213,8 @@ def optimize_score_cutoff(scores):
         plt.title('log2(obs / expected) * npos')
         plt.savefig(opath)
     lim_value = xs[ys.argmax()]
-    orig_pos_ratio = (scores > 0).sum() / float(len(scores))
-    pos_ratio = (scores > lim_value).sum() / float(len(scores))
+    orig_pos_ratio = (all_scores > 0).sum() / float(len(all_scores))
+    pos_ratio = (all_scores > lim_value).sum() / float(len(all_scores))
     log.notice('Original positive bin ratio is %.2f' % orig_pos_ratio)
     log.notice('Adjusted positive bin ratio is %.2f' % pos_ratio)
     return lim_value
@@ -222,15 +227,23 @@ def read_scores(bedgraph, legal_chroms, scorefunc):
     input_scale_factor = get_input_scale_factor(bins)
     nbins = normalize_bins(bins, input_scale_factor)
     sbins = score_bins(nbins, scorefunc)
-    lim_score = optimize_score_cutoff(np.array([x.score for x in sbins]))
-    pos_score = 1
-    neg_score = -1 #compute_neg_score(sbins, max_pos_ratio=pos_bin_ratio)
 
     chromd = defaultdict(list)
     for x in sbins:
-        bin_score = 1 if x.score > lim_score else neg_score
-        chromd[x.chrom].append(bed(x.chrom, x.start, x.end, bin_score))
+        chromd[x.chrom].append(x)
     return chromd
+
+def as_binary_score(cd):
+    scores = [np.array([x.score for x in xs]) for xs in cd.values()]
+    lim_score = optimize_score_cutoff(scores)
+    pos_score = 1
+    neg_score = -1
+    r = {}
+    for k, xs in cd.items():
+        ys = [bed(x.chrom, x.start, x.end, pos_score if x.score > lim_score else neg_score)
+              for x in xs]
+        r[k] = ys
+    return r
 
 def write_segments(of, spc, segment_cutoff=1):
     log.notice('Saving significant peaks.')

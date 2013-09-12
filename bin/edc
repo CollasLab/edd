@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-from enriched_domain_caller import get_sig_limit, util
+from enriched_domain_caller import get_sig_limit, util, gaps
 import sys
 import argparse
 import numpy as np
@@ -8,6 +8,7 @@ import itertools
 #import ipdb
 from logbook import Logger, FileHandler, StderrHandler
 log = Logger('base')
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -19,7 +20,7 @@ if __name__ == '__main__':
     parser.add_argument('-p', '--nprocs', type=int, default=4)
     parser.add_argument('-l', '--fdr', type=float, default=0.05)
     #parser.add_argument('--pos-bin-score-ratio', type=float, default=.40)
-    parser.add_argument('--times-std', type=float, default=3.0)
+    parser.add_argument('--trivial-lim', type=float, default=17)
     parser.add_argument('--bin-score-function', choices=['log2-ratio', 'CI-lower'],
                         default='log2-ratio')
     parser.add_argument('--log-level', default='NOTICE')
@@ -37,6 +38,9 @@ if __name__ == '__main__':
         legal_chroms = util.parse_chrom_filter(args.chrom_filter, prefix=args.chrom_filter_prefix)
         scores_per_chrom = util.read_scores(args.count_file, legal_chroms,
                                                  scorefunc=args.bin_score_function)
+        gs = gaps.read_gap_file('/data/egl/code/edc/data/gap_hg19.bed', drop_smaller_than=1e6)
+        scores_per_chrom, gapped_chroms_to_chrom = gaps.split_on_gaps(scores_per_chrom, gs)
+        scores_per_chrom = util.as_binary_score(scores_per_chrom)
         chrom_sizes = util.as_chrom_sizes(scores_per_chrom)
         obs_res_full = util.obs_results(scores_per_chrom)
         obs_res = util.filter_smaller_than_Nsd_from_mean(obs_res_full, args.times_std)
@@ -45,4 +49,5 @@ if __name__ == '__main__':
         fdr_score_lim = get_sig_limit(obs, mc_res, fdr_lim=args.fdr)
 
         log.notice('fdr_score_lim %.2f' % fdr_score_lim)
-        util.write_segments(output_file, obs_res, segment_cutoff=fdr_score_lim)
+        ores = gaps.join_gaps(obs_res, gapped_chroms_to_chrom)
+        util.write_segments(output_file, ores, segment_cutoff=fdr_score_lim)
