@@ -1,8 +1,13 @@
-import os
-import pybedtools
 import collections
-import util
 import operator
+import os
+
+import logbook
+import pybedtools
+
+from enriched_domain_caller import util
+
+log = logbook.Logger('base')
 
 class Gap(object):
 
@@ -33,11 +38,12 @@ def read_gap_file(path, drop_smaller_than):
     filtered_src = src.merge().filter(lambda x: (x.end - x.start) >= drop_smaller_than)
     log.notice('Gap file read. Total coverage: %.2fMB' % (
         src.total_coverage() / 1e6))
-    log.notice('Removing gaps smaller than %.2fMB. Total coverage after filtering: %.2fMB' % (
-        (drop_smaller_than / 1e6, filtered_src.total_coverage() / 1e6)))
     for e in filtered_src:
         x = Gap(e.chrom, e.start, e.end)
         res.append(x)
+    tot = sum(x.end - x.start for x in res)
+    log.notice('Removing gaps smaller than %.2fMB. Total coverage after filtering: %.2fMB' % (
+        (drop_smaller_than / 1e6, tot / 1e6)))
     return res
 
 def split_on_gaps(scores_per_chrom, gaps):
@@ -88,7 +94,7 @@ def split_on_gaps(scores_per_chrom, gaps):
 def join_gaps(res, gapped_chroms_to_chrom):
     d = collections.defaultdict(list)
     for k, xs in res.items():
-        d[gapped_chroms_to_chrom[k]].extend(xs)
+        d[gapped_chroms_to_chrom.get(k, k)].extend(xs)
     for xs in d.values():
         xs.sort(key=operator.attrgetter('start'))
     return d

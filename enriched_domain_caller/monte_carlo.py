@@ -5,6 +5,7 @@ import itertools
 import pandas as pa
 import sys
 from bisect import bisect_left
+import multiprocessing
 
 class MonteCarlo(object):
     """
@@ -76,3 +77,16 @@ def get_sig_limit(obs, mc, fdr_lim):
 
     fdr_lim = obs[lim_idx]
     return fdr_lim
+
+def run_simulation(chrom_sizes, niter=4, nprocs=4):
+    mc = MonteCarlo(chrom_sizes)
+    sys.stdout.write('Performing %d monte carlo trials: ' % niter)
+    sys.stdout.flush()
+    if nprocs > 1:
+        m = multiprocessing.Pool(nprocs)
+        xs = m.map(mc, range(niter))
+
+    else:
+        xs = [mc(i) for i in range(niter)]
+    sys.stdout.write('\nDone\n')
+    return np.sort(xs)
