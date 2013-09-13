@@ -80,6 +80,12 @@ def obs_results(scores_per_chrom):
     return segments_per_chrom
 
 def filter_smaller_than_Nsd_from_mean(d, N):
+    '''
+    currently not used. STD varies a lot between experiments.
+    better to filter smaller than lim: where lim is lower than any observed
+    FDR corrected significant limit value.
+    TODO: delete?
+    '''
     scores = np.array([x.score for x in itertools.chain.from_iterable(d.values())])
     log.notice('%d potential peaks are FDR corrected (%.2f STD[%.2f] from mean[%.2f])' % (
         len(scores), N, scores.std(), scores.mean()))

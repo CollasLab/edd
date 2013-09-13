@@ -15,6 +15,8 @@ if __name__ == '__main__':
     parser.add_argument('count_file', type=argparse.FileType('r'))
     parser.add_argument('output_dir')
     parser.add_argument('-f', '--chrom-filter', nargs='+', default=None)
+    parser.add_argument('-g', '--gap-file', type=argparse.FileType('r'), default=None)
+    parser.add_argument('--drop-gaps-smaller-than', type=float, default=1e6)
     parser.add_argument('--chrom-filter-prefix', default='')
     parser.add_argument('-n', '--num-trials', type=int, default=100)
     parser.add_argument('-p', '--nprocs', type=int, default=4)
@@ -37,17 +39,25 @@ if __name__ == '__main__':
     #with ipdb.launch_ipdb_on_exception():
         legal_chroms = util.parse_chrom_filter(args.chrom_filter, prefix=args.chrom_filter_prefix)
         scores_per_chrom = util.read_scores(args.count_file, legal_chroms,
-                                                 scorefunc=args.bin_score_function)
-        gs = gaps.read_gap_file('/data/egl/code/edc/data/gap_hg19.bed', drop_smaller_than=1e6)
-        scores_per_chrom, gapped_chroms_to_chrom = gaps.split_on_gaps(scores_per_chrom, gs)
+                                            scorefunc=args.bin_score_function)
+
+        if args.gap_file:
+            log.notice('reading unmappable regions (gaps) from %s' % args.gap_file.name)
+            gs = gaps.read_gap_file(args.gap_file.name, drop_smaller_than=args.drop_gaps_smaller_than) # gaps
+            scores_per_chrom, gapped_chroms_to_chrom = gaps.split_on_gaps(scores_per_chrom, gs) #gaps
+
         scores_per_chrom = util.as_binary_score(scores_per_chrom)
         chrom_sizes = util.as_chrom_sizes(scores_per_chrom)
         obs_res_full = util.obs_results(scores_per_chrom)
-        obs_res = util.filter_smaller_than_Nsd_from_mean(obs_res_full, args.times_std)
+        obs_res = util.filter_smaller_than_lim(obs_res_full, args.trivial_lim)
         obs = [x.score for x in itertools.chain.from_iterable(obs_res.values())]
         mc_res = util.monte_carlo(chrom_sizes, niter=args.num_trials, nprocs=args.nprocs)
         fdr_score_lim = get_sig_limit(obs, mc_res, fdr_lim=args.fdr)
-
         log.notice('fdr_score_lim %.2f' % fdr_score_lim)
-        ores = gaps.join_gaps(obs_res, gapped_chroms_to_chrom)
+
+        if args.gap_file:
+            ores = gaps.join_gaps(obs_res, gapped_chroms_to_chrom) # gap
+        else:
+            ores = obs_res
+
         util.write_segments(output_file, ores, segment_cutoff=fdr_score_lim)
