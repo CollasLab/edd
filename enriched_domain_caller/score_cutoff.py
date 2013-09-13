@@ -1,3 +1,10 @@
+import math
+
+import numpy as np
+from logbook import Logger, FileHandler
+
+log = Logger('base')
+
 def information_score_helper(bins):
     '''
     returns a score that tries to say something
@@ -14,6 +21,10 @@ def information_score_helper(bins):
 def information_score(bins_per_chrom, pos_cutoff):
     return sum(information_score_helper(x > pos_cutoff) for x in bins_per_chrom)
 
+def information_score_for_range(scores, cutoffs):
+    return np.array([information_score(scores, pos_cutoff)
+                     for pos_cutoff in cutoffs])
+
 def optimize_score_cutoff(scores):
     '''
     we require the cutoff to be between 0 and mean pos score
@@ -22,8 +33,7 @@ def optimize_score_cutoff(scores):
     lim = all_scores[all_scores > 0].mean()
     log.notice('searching for optimal pos bin ratio lim between 0 and %.3f.' % lim)
     xs = np.linspace(0, lim, 70)
-    ys = np.array([information_score(scores, pos_cutoff)
-                   for pos_cutoff in xs])
+    ys = information_score_for_range(scores, xs)
     if verbose_dir is not None:
         opath = os.path.join(verbose_dir, 'information_content.png')
         plt.clf()
