@@ -7,7 +7,7 @@ import operator
 import sys
 from logbook import Logger
 #import ipdb
-verbose_dir = None
+
 log = Logger('base')
 hg19_chromfilter = set(['chrY', 'chrX', 'chr13', 'chr12', 'chr11', 'chr10', 'chr17', 'chr16', 'chr15', 'chr14', 'chr19', 'chr18', 'chr22', 'chr20', 'chr21', 'chr7', 'chr6', 'chr5', 'chr4', 'chr3', 'chr2', 'chr1', 'chr9', 'chr8'])
 bed = namedtuple('BedGraph', 'chrom start end score')

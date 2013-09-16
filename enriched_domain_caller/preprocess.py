@@ -55,13 +55,14 @@ class GenomeBinScore(object):
         self.rev_gaps = revdict
 
     def as_binary(self):
-        scores = [np.array([x.score for x in xs]) for xs in self._chrom_scores.values()]
-        lim_score = score_cutoff.optimize_score_cutoff(scores)
-        pos_score = 1
-        neg_score = -1
+        self.opt_score = sc = score_cutoff.ScoreCutoff.from_chrom_scores(
+            self._chrom_scores).optimize()
+
+        score = { True: 1, False: -1 }
         r = {}
         for k, xs in self._chrom_scores.items():
-            ys = [util.bed(x.chrom, x.start, x.end, pos_score if x.score > lim_score else neg_score)
+            ys = [util.bed(x.chrom, x.start, x.end,
+                           score[x.score > self.opt_score.lim_score])
                   for x in xs]
             r[k] = ys
         return GenomeBinBinary(r)

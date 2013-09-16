@@ -37,7 +37,8 @@ if __name__ == '__main__':
         scores = preprocess.GenomeBinScore.from_count_file(args.count_file.name,
                                                            score_function_name=args.bin_score_function,
                                                            normalize=True)
-        scores.add_gaps(args.gap_file.name, args.drop_gaps_smaller_than)
+        if args.gap_file is not None:
+            scores.add_gaps(args.gap_file.name, args.drop_gaps_smaller_than)
         binary_bins = scores.as_binary()
         observed_result_full = binary_bins.find_maximum_segments()
         observed_result = observed_result_full.filter_trivial(args.trivial_lim)
