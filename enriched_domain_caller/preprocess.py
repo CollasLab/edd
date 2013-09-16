@@ -62,7 +62,7 @@ class GenomeBinScore(object):
         r = {}
         for k, xs in self._chrom_scores.items():
             ys = [util.bed(x.chrom, x.start, x.end,
-                           score[x.score > self.opt_score.lim_score])
+                           score[x.score > self.opt_score.lim_value])
                   for x in xs]
             r[k] = ys
         return GenomeBinBinary(r)

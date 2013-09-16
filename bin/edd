@@ -27,7 +27,6 @@ if __name__ == '__main__':
         os.makedirs(args.output_dir)
     output_name = os.path.basename(args.output_dir) + '_peaks.bed'
     output_file = open(os.path.join(args.output_dir, output_name), 'w')
-    util.verbose_dir = args.output_dir
     log_file = os.path.join(args.output_dir, 'log.txt')
     log_handler = FileHandler(log_file, level=args.log_level, bubble=True)
 
@@ -40,6 +39,8 @@ if __name__ == '__main__':
         if args.gap_file is not None:
             scores.add_gaps(args.gap_file.name, args.drop_gaps_smaller_than)
         binary_bins = scores.as_binary()
+        scores.opt_score.plot_results(os.path.join(args.output_dir, 'information_content.png'),
+                                      title=args.count_file.name, annotate=True)
         observed_result_full = binary_bins.find_maximum_segments()
         observed_result = observed_result_full.filter_trivial(args.trivial_lim)
         mc_res = monte_carlo.run_simulation(binary_bins.get_stats(), niter=args.num_trials, nprocs=args.nprocs)
