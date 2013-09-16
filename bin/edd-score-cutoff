@@ -1,0 +1,58 @@
+#!/usr/bin/env python
+import argparse
+import collections
+import sys
+
+import matplotlib as mpl
+mpl.use('Agg')
+import matplotlib.pylab as plt
+import numpy as np
+
+from enriched_domain_caller import preprocess, score_cutoff
+
+struct = collections.namedtuple('container', 'scores min max')
+optscore = collections.namedtuple('optscore', 'xs ys')
+
+def as_scores(d):
+    scores = [np.array([x.score for x in xs]) for xs in d._chrom_scores.values()]
+    min_score = min(map(min, scores))
+    max_score = max(map(max, scores))
+    return struct(scores, min_score, max_score)
+
+def compute_plot_values(a):
+    xs = np.linspace(a.min, a.max, 300)
+    ys = score_cutoff.information_score_for_range(a.scores, xs)
+    return optscore(xs, ys)
+
+def opt_has_ratio(a, r):
+    cp = r.xs[r.ys.argmax()]
+    xs = np.concatenate(a.scores)
+    return (xs > cp).sum() / float(len(xs))
+
+def plot_results(pv, dst):
+    plt.plot(pv.xs, pv.ys)
+    plt.savefig(dst)
+
+def run(src, dst):
+    s = preprocess.GenomeBinScore.from_count_file(src, normalize=True)
+    a = as_scores(s)
+    pv = compute_plot_values(a)
+    ratio = opt_has_ratio(a, pv)
+    print 'pos bin ratio: %.2f' % ratio
+    plot_results(pv, dst)
+    if ratio > 0.5:
+        print 'UNUSABLE RESULTS'
+        print '\tpos bin ratio for max score too low'
+        print '\ttry to increase the bin size'
+    elif ratio > 0.45:
+        print 'WARNING'
+        print '\tratio of positive bins unusually high'
+        print '\ttry to increase the bin size'
+
+
+if __name__ == '__main__':
+    p = argparse.ArgumentParser()
+    p.add_argument('input_file', type=argparse.FileType('r'))
+    p.add_argument('output_file', type=argparse.FileType('w'))
+    args = p.parse_args(sys.argv[1:])
+    run(args.input_file.name, args.output_file.name)

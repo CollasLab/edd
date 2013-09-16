@@ -12,7 +12,8 @@ setup(name='enriched_domain_caller',
       author_email='e.g.lund@medisin.uio.no',
       packages=['enriched_domain_caller'],
       scripts=['bin/edd',
-               'bin/edd-debug'],
+               'bin/edd-debug',
+               'bin/edd-score-cutoff'],
             install_requires=[
           'numpy',
           'pandas'
