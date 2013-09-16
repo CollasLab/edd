@@ -37,25 +37,28 @@ def plot_results(pv, dst, title=None, arrow_coord=None):
     if title is not None:
         plt.title(title)
     if arrow_coord is not None:
-        plt.arrow(**arrow_coord)
+        plt.annotate(**arrow_coord)
     plt.savefig(dst)
 
-def get_arrow_coords(pv, i):
+def get_arrow_coords(pv, i, ratio):
     # this is an alternative, arrow with text!
-    # plt.annotate('test', xy=(xs[30], ys[30]),
-    #          xytext=(xs[30], ys[30] - ys.max() / 10.),
-    #          arrowprops=dict(facecolor='black', shrink=0.05))
+    ymax = pv.ys[i]
+    x = pv.xs[i]
+    txt = 'x=%.2f, r=%.2f' % (x, ratio)
+    return dict(s=txt, xy=(x, ymax),
+                 xytext=(pv.xs[len(pv.xs)/10.], ymax / 1.5),
+                 arrowprops=dict(facecolor='black', shrink=0.05))
 
-    return dict(
-        x=pv.xs[i],
-        y=0.5*pv.ys[i],
-        dx=0,
-        dy=0.3*pv.ys[i],
-        head_length=0.1*pv.ys[i],
-        head_width=pv.xs[-1]/10.,
-        width=pv.xs[-1]/50.,
-        fc="k", ec="k"
-        )
+    # return dict(
+    #     x=pv.xs[i],
+    #     y=0.5*pv.ys[i],
+    #     dx=0,
+    #     dy=0.3*pv.ys[i],
+    #     head_length=0.1*pv.ys[i],
+    #     head_width=pv.xs[-1]/10.,
+    #     width=pv.xs[-1]/50.,
+    #     fc="k", ec="k"
+    #     )
 
 def run(src, dst):
     s = preprocess.GenomeBinScore.from_count_file(src, normalize=True)
@@ -64,7 +67,7 @@ def run(src, dst):
     opt_score, idx = find_opt_score(pv)
     ratio = opt_has_ratio(a, opt_score)
     print 'pos bin ratio: %.2f' % ratio
-    plot_results(pv, dst, title=src, arrow_coord=get_arrow_coords(pv, idx))
+    plot_results(pv, dst, title=src, arrow_coord=get_arrow_coords(pv, idx, ratio))
     if ratio > 0.5:
         print 'UNUSABLE RESULTS'
         print '\tpos bin ratio for max score too low'
