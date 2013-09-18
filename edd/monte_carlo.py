@@ -1,6 +1,6 @@
 import numpy as np
 from collections import Counter
-from enriched_domain_caller import max_segments, NoPeaksException
+from edd import max_segments, NoPeaksException
 import itertools
 import pandas as pa
 import sys

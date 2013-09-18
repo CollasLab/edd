@@ -4,13 +4,13 @@ from distutils.extension import Extension
 from Cython.Distutils import build_ext
 
 
-setup(name='enriched_domain_caller',
+setup(name='edd',
       version='0.1',
       description='ChIP-seq broad domain peak caller',
-      url='http://github.com/eivindgl/edc',
+      url='http://github.com/eivindgl/edd',
       author='Eivind G. Lund',
       author_email='e.g.lund@medisin.uio.no',
-      packages=['enriched_domain_caller'],
+      packages=['edd'],
       scripts=['bin/edd',
                'bin/edd-debug',
                'bin/edd-score-cutoff'],
@@ -20,7 +20,7 @@ setup(name='enriched_domain_caller',
       ],
 
     ext_modules=[
-            Extension('max_segments', ['enriched_domain_caller/max_segments.pyx']),
+            Extension('max_segments', ['edd/max_segments.pyx']),
             ],
     cmdclass = {'build_ext': build_ext},
     )

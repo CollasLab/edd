@@ -5,7 +5,7 @@ import operator
 import logbook
 import numpy as np
 
-from enriched_domain_caller import util, gaps, max_segments, score_cutoff
+from edd import util, gaps, max_segments, score_cutoff
 
 log = logbook.Logger('base')
 

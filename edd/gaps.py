@@ -5,7 +5,7 @@ import os
 import logbook
 import pybedtools
 
-from enriched_domain_caller import util
+from edd import util
 
 log = logbook.Logger('base')
 
