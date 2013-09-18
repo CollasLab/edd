@@ -63,7 +63,7 @@ class GenomeBinScore(object):
             self.lim_value = self.opt_score.get_limit_score(min_ratio)
             log.warn('Using non-optimal %.3f as lim value as it gives a ratio of %.2f.' % (self.lim_value, min_ratio))
         else:
-            self.lim_value = self.opt_score.get_lim_value_for_ratio(min_ratio)
+            self.lim_value = self.opt_score.lim_value
         score = { True: 1, False: -1 }
         r = {}
         for k, xs in self._chrom_scores.items():
