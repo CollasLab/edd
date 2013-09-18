@@ -54,15 +54,21 @@ class GenomeBinScore(object):
         self._chrom_scores = d
         self.rev_gaps = revdict
 
-    def as_binary(self):
-        self.opt_score = sc = score_cutoff.ScoreCutoff.from_chrom_scores(
+    def as_binary(self, min_ratio=0.4):
+        self.opt_score = score_cutoff.ScoreCutoff.from_chrom_scores(
             self._chrom_scores).optimize()
-
+        if self.opt_score.ratio > min_ratio:
+            log.warn(('Estimated optimal cutoff gives a too high ratio. (%.2f > %.2f'
+                     + 'Consider increasing the bin size') % (self.opt_score.ratio, min_ratio))
+            self.lim_value = self.opt_score.get_limit_score(min_ratio)
+            log.warn('Using non-optimal %.3f as lim value as it gives a ratio of %.2f.' % (self.lim_value, min_ratio))
+        else:
+            self.lim_value = self.opt_score.get_lim_value_for_ratio(min_ratio)
         score = { True: 1, False: -1 }
         r = {}
         for k, xs in self._chrom_scores.items():
             ys = [util.bed(x.chrom, x.start, x.end,
-                           score[x.score > self.opt_score.lim_value])
+                           score[x.score > self.lim_value])
                   for x in xs]
             r[k] = ys
         return GenomeBinBinary(r)

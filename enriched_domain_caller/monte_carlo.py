@@ -1,6 +1,6 @@
 import numpy as np
 from collections import Counter
-from enriched_domain_caller import max_segments
+from enriched_domain_caller import max_segments, NoPeaksException
 import itertools
 import pandas as pa
 import sys
@@ -68,7 +68,10 @@ def get_sig_limit(obs, mc, fdr_lim):
     def largest_significant_fdr_corr_pval(pvals, fdr_a=.05):
         idx = np.arange(len(pvals)) + 1
         hits = idx * fdr_a / len(pvals) >= pvals
-        return np.flatnonzero(hits)[-1]
+        try:
+            return np.flatnonzero(hits)[-1]
+        except IndexError:
+            raise NoPeaksException
 
     obs = np.sort(obs)[::-1]
     mc = np.sort(mc)

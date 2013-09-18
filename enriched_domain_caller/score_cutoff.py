@@ -2,7 +2,7 @@ import math
 
 import numpy as np
 import matplotlib.pyplot as plt
-from logbook import Logger, FileHandler
+from logbook import Logger
 
 log = Logger('base')
 
@@ -26,7 +26,7 @@ class ScoreCutoff(object):
     def optimize(self):
         log.notice('searching for optimal pos bin ratio lim between %.3f and %.3f.' % (
             self.min_score, self.max_score))
-        self.xs = np.linspace(self.min_score, self.max_score, 500)
+        self.xs = np.linspace(self.min_score, self.max_score, 1000)
         self.ys = self.__information_score_for_range()
         self.max_idx = self.ys.argmax()
         self.lim_value = self.xs[self.max_idx]
@@ -65,6 +65,12 @@ class ScoreCutoff(object):
                   for xs in chrom_scores.values()]
         return ScoreCutoff(scores)
 
+    def get_limit_score(self, ratio):
+        bs = np.concatenate(self.scores)
+        bs.sort()
+        bs = bs[::-1]
+        lim_score_idx = int(len(bs) * ratio)
+        return bs[lim_score_idx]
 
     @classmethod
     def information_score_helper(cls, bins):

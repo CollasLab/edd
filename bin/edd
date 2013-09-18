@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-from enriched_domain_caller import util, preprocess, monte_carlo
+from enriched_domain_caller import util, preprocess, monte_carlo, NoPeaksException
 import sys
 import argparse
 import os
@@ -44,6 +44,9 @@ if __name__ == '__main__':
         observed_result_full = binary_bins.find_maximum_segments()
         observed_result = observed_result_full.filter_trivial(args.trivial_lim)
         mc_res = monte_carlo.run_simulation(binary_bins.get_stats(), niter=args.num_trials, nprocs=args.nprocs)
-        fdr_score_lim = monte_carlo.get_sig_limit(observed_result.get_interval_scores(), mc_res, fdr_lim=args.fdr)
-        log.notice('fdr_score_lim %.2f' % fdr_score_lim)
-        observed_result.merge_gaps(scores.rev_gaps).as_bed(output_file.name, segment_cutoff=fdr_score_lim)
+        try:
+            fdr_score_lim = monte_carlo.get_sig_limit(observed_result.get_interval_scores(), mc_res, fdr_lim=args.fdr)
+            log.notice('fdr_score_lim %.2f' % fdr_score_lim)
+            observed_result.merge_gaps(scores.rev_gaps).as_bed(output_file.name, segment_cutoff=fdr_score_lim)
+        except NoPeaksException:
+            log.error("No significant peaks found.")
