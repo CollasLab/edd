@@ -4,7 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from logbook import Logger
 
-log = Logger('base')
+log = Logger(__name__)
 
 
 

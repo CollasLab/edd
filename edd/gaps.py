@@ -7,7 +7,7 @@ import pybedtools
 
 from edd import util
 
-log = logbook.Logger('base')
+log = logbook.Logger(__name__)
 
 class Gap(object):
 

@@ -7,7 +7,7 @@ import numpy as np
 
 from edd import util, gaps, max_segments, score_cutoff
 
-log = logbook.Logger('base')
+log = logbook.Logger(__name__)
 
 class GenomeBinScore(object):
     """
