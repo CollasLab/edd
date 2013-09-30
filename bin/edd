@@ -1,11 +1,11 @@
 #!/usr/bin/env python
-from enriched_domain_caller import util, preprocess, monte_carlo, NoPeaksException
+from edd import util, preprocess, monte_carlo, NoPeaksException
 import sys
 import argparse
 import os
 #import ipdb
 from logbook import Logger, FileHandler
-log = Logger('base')
+log = Logger(__name__)
 
 
 if __name__ == '__main__':
@@ -33,6 +33,14 @@ if __name__ == '__main__':
     with log_handler.applicationbound():
     #with ipdb.launch_ipdb_on_exception():
         # input data should also be normalized
+        log.notice('input file: %s' % args.count_file.name)
+        log.notice('output dir: %s' % args.output_dir)
+        log.notice('gap_file  : %s' % args.gap_file.name if args.gap_file else args.gap_file)
+        log.notice('drop gaps smaller than: %.2f' % args.drop_gaps_smaller_than)
+        log.notice('mc trials: %d' % args.num_trials)
+        log.notice('fdr: %.3f' % args.fdr)
+        log.notice('trivial lim: %.2f' % args.trivial_lim)
+        log.notice('score_function: %s' % args.bin_score_function)
         scores = preprocess.GenomeBinScore.from_count_file(args.count_file.name,
                                                            score_function_name=args.bin_score_function,
                                                            normalize=True)

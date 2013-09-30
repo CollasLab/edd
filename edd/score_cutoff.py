@@ -12,7 +12,7 @@ class ScoreCutoff(object):
     """
     """
 
-    def __init__(self, scores):
+    def __init__(self, scores, pos_bins_as_fraction=False):
         """
 
         Arguments:
@@ -22,6 +22,7 @@ class ScoreCutoff(object):
         self.min_score = min(x.min() for x in self.scores)
         self.max_score = max(x.max() for x in self.scores)
         self._ratio = None
+        self.pos_bins_as_fraction = pos_bins_as_fraction
 
     def optimize(self):
         log.notice('searching for optimal pos bin ratio lim between %.3f and %.3f.' % (
@@ -60,10 +61,10 @@ class ScoreCutoff(object):
                      arrowprops=dict(facecolor='black', shrink=0.05))
 
     @classmethod
-    def from_chrom_scores(self, chrom_scores):
+    def from_chrom_scores(self, chrom_scores, pos_bins_as_fraction=False):
         scores = [np.array([x.score for x in xs])
                   for xs in chrom_scores.values()]
-        return ScoreCutoff(scores)
+        return ScoreCutoff(scores, pos_bins_as_fraction=pos_bins_as_fraction)
 
     def get_limit_score(self, ratio):
         bs = np.concatenate(self.scores)
@@ -84,7 +85,11 @@ class ScoreCutoff(object):
         expected = r**2 * (len(bins) - 1)
         observed = np.logical_and(bins[:-1], bins[1:]).sum()
         information_content = math.log((observed + 1) / float(expected + 1))
-        return information_content * npos
+        if self.pos_bins_as_fraction:
+            bin_score = r
+        else:
+            bin_score = npos
+        return information_content * bin_score
 
     def __information_score(self, pos_cutoff):
         return sum(self.information_score_helper(x > pos_cutoff)

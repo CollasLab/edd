@@ -8,15 +8,16 @@ mpl.use('Agg')
 import matplotlib.pylab as plt
 import numpy as np
 
-from enriched_domain_caller import preprocess, score_cutoff
+from edd import preprocess, score_cutoff
 
 struct = collections.namedtuple('container', 'scores min max')
 optscore = collections.namedtuple('optscore', 'xs ys')
 
 
-def run(src, dst):
+def run(src, dst, pos_bins_as_fraction):
     s = preprocess.GenomeBinScore.from_count_file(src, normalize=True)
-    a = score_cutoff.ScoreCutoff.from_chrom_scores(s._chrom_scores).optimize()
+    a = score_cutoff.ScoreCutoff.from_chrom_scores(
+        s._chrom_scores, pos_bins_as_fraction=pos_bins_as_fraction).optimize()
     print 'pos bin ratio: %.2f' % a.ratio
     a.plot_results(dst, title=src, annotate=True)
     if a.ratio > 0.5:
@@ -33,5 +34,6 @@ if __name__ == '__main__':
     p = argparse.ArgumentParser()
     p.add_argument('input_file', type=argparse.FileType('r'))
     p.add_argument('output_file', type=argparse.FileType('w'))
+    p.add_argument('-p', '--fraction-of-positive-bins', action='store_true')
     args = p.parse_args(sys.argv[1:])
-    run(args.input_file.name, args.output_file.name)
+    run(args.input_file.name, args.output_file.name, args.fraction_of_positive_bins)
