@@ -73,8 +73,7 @@ class ScoreCutoff(object):
         lim_score_idx = int(len(bs) * ratio)
         return bs[lim_score_idx]
 
-    @classmethod
-    def information_score_helper(cls, bins):
+    def information_score_helper(self, bins):
         '''
         returns a score that tries to say something
         about coverage to quality.
