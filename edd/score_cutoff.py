@@ -23,6 +23,8 @@ class ScoreCutoff(object):
         self.max_score = max(x.max() for x in self.scores)
         self._ratio = None
         self.pos_bins_as_fraction = pos_bins_as_fraction
+        self.xs = None
+        self.ys = None
 
     def optimize(self):
         log.notice('searching for optimal pos bin ratio lim between %.3f and %.3f.' % (
@@ -32,6 +34,16 @@ class ScoreCutoff(object):
         self.max_idx = self.ys.argmax()
         self.lim_value = self.xs[self.max_idx]
         return self
+
+    def save_json(self, filename):
+        assert self.xs is not None
+        assert self.ys is not None
+        d = {}
+        d['pos-bins-as-fraction'] = self.pos_bins_as_fraction
+        d['xs'] = list(self.xs)
+        d['ys'] list(self.ys)
+        with open(filename, 'w') as f:
+            json.dump(d, f)
 
     @property
     def ratio(self):

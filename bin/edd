@@ -49,6 +49,7 @@ if __name__ == '__main__':
         if args.gap_file is not None:
             scores.add_gaps(args.gap_file.name, args.drop_gaps_smaller_than)
         binary_bins = scores.as_binary(pos_bins_as_count=args.count_of_positive_bins)
+        scores.opt_score.save_json(os.path.join(args.output_dir, 'optimize_cutoff_values.json'))
         scores.opt_score.plot_results(os.path.join(args.output_dir, 'information_content.png'),
                                       title=args.count_file.name, annotate=True)
         observed_result_full = binary_bins.find_maximum_segments()
