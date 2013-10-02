@@ -21,6 +21,8 @@ if __name__ == '__main__':
     parser.add_argument('--trivial-lim', type=float, default=17)
     parser.add_argument('--bin-score-function', choices=['log2-ratio', 'CI-lower'],
                         default='log2-ratio')
+    p.add_argument('-c', '--count-of-positive-bins',
+                   action='store_true')
     parser.add_argument('--log-level', default='NOTICE')
     args = parser.parse_args(sys.argv[1:])
     if not os.path.isdir(args.output_dir):
@@ -46,7 +48,7 @@ if __name__ == '__main__':
                                                            normalize=True)
         if args.gap_file is not None:
             scores.add_gaps(args.gap_file.name, args.drop_gaps_smaller_than)
-        binary_bins = scores.as_binary()
+        binary_bins = scores.as_binary(pos_bins_as_count=args.count_of_positive_bins)
         scores.opt_score.plot_results(os.path.join(args.output_dir, 'information_content.png'),
                                       title=args.count_file.name, annotate=True)
         observed_result_full = binary_bins.find_maximum_segments()
