@@ -1,7 +1,7 @@
 import math
-
 import numpy as np
 import matplotlib.pyplot as plt
+import pandas as pa
 from logbook import Logger
 
 log = Logger(__name__)
@@ -26,24 +26,23 @@ class ScoreCutoff(object):
         self.xs = None
         self.ys = None
 
-    def optimize(self):
+    def optimize(self, ic_power=1.15):
         log.notice('searching for optimal pos bin ratio lim between %.3f and %.3f.' % (
             self.min_score, self.max_score))
         self.xs = np.linspace(self.min_score, self.max_score, 1000)
-        self.ys = self.__information_score_for_range()
+        self.df = pa.DataFrame([self.__information_score(self.scores, pos_cutoff)
+                                for pos_cutoff in self.xs])
+        xs = self.df.ratio.values * self.df.information_score.values ** ic_power
+        xmin = xs[~np.isnan(xs)].min()
+        xs[np.isnan(xs)] = xmin
+        self.ys =xs
         self.max_idx = self.ys.argmax()
         self.lim_value = self.xs[self.max_idx]
         return self
 
     def save_json(self, filename):
-        assert self.xs is not None
-        assert self.ys is not None
-        d = {}
-        d['pos-bins-as-fraction'] = self.pos_bins_as_fraction
-        d['xs'] = list(self.xs)
-        d['ys'] list(self.ys)
-        with open(filename, 'w') as f:
-            json.dump(d, f)
+        self.df.to_csv(filename)
+
 
     @property
     def ratio(self):
@@ -73,10 +72,10 @@ class ScoreCutoff(object):
                      arrowprops=dict(facecolor='black', shrink=0.05))
 
     @classmethod
-    def from_chrom_scores(self, chrom_scores, pos_bins_as_fraction=False):
+    def from_chrom_scores(self, chrom_scores, pos_bins_as_count=False):
         scores = [np.array([x.score for x in xs])
                   for xs in chrom_scores.values()]
-        return ScoreCutoff(scores, pos_bins_as_fraction=pos_bins_as_fraction)
+        return ScoreCutoff(scores, pos_bins_as_fraction=(not pos_bins_as_count))
 
     def get_limit_score(self, ratio):
         bs = np.concatenate(self.scores)
@@ -85,27 +84,28 @@ class ScoreCutoff(object):
         lim_score_idx = int(len(bs) * ratio)
         return bs[lim_score_idx]
 
-    def information_score_helper(self, bins):
-        '''
-        returns a score that tries to say something
-        about coverage to quality.
-        (we want to cover many high quality bins)
-        '''
-        npos = bins.sum()
-        r = float(npos) / len(bins)
-        expected = r**2 * (len(bins) - 1)
-        observed = np.logical_and(bins[:-1], bins[1:]).sum()
-        information_content = math.log((observed + 1) / float(expected + 1))
-        if self.pos_bins_as_fraction:
-            bin_score = r
-        else:
-            bin_score = npos
-        return information_content * bin_score
+    @classmethod
+    def __get_num_positive_bins_and_pairs(cls, bins_by_chrom):
+        npositive = npositive_pairs = 0
+        # r = float(npos) / len(bins)
+        # information_content = math.log((observed + 1) / float(expected + 1))
+        for bins in bins_by_chrom:
+            npositive_pairs += np.logical_and(bins[:-1], bins[1:]).sum()
+            npositive += bins.sum()
+        return npositive, npositive_pairs
 
-    def __information_score(self, pos_cutoff):
-        return sum(self.information_score_helper(x > pos_cutoff)
-                   for x in self.scores)
-
-    def __information_score_for_range(self):
-        return np.array([self.__information_score(pos_cutoff)
-                         for pos_cutoff in self.xs])
+    @classmethod
+    def __information_score(cls, scores, pos_cutoff):
+        nbins = sum(len(s) for s in scores)
+        # there are N-1 adjacent bin pairs in an interval of N bins
+        npairs = nbins - len(scores)
+        npositive = sum((s > pos_cutoff).sum() for s in scores)
+        r = float(npositive) / nbins
+        expected = r**2 * npairs
+        npositive, npositive_pairs = cls.__get_num_positive_bins_and_pairs(
+            [x > pos_cutoff for x in scores])
+        information_score = math.log((npositive_pairs + 1) / (expected + 1))
+        return dict(score=(information_score * r),
+                    information_score=information_score, ratio=r,
+                    npositive=npositive, nbins=nbins, expected=expected,
+                    npositive_pairs=npositive_pairs, cutoff=pos_cutoff)
