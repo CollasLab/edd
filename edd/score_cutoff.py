@@ -124,3 +124,25 @@ class ScoreCutoff(object):
                     information_score=information_score, ratio=r,
                     npositive=npositive, nbins=nbins, expected=expected,
                     npositive_pairs=npositive_pairs, cutoff=pos_cutoff)
+
+#  bin size optimizer
+ def optimize(self, ic_power=1.0):
+     # old
+     xs = (np.sqrt(self.df.nbins.values) *
+           self.df.ratio.values *
+           self.df.information_score.values ** ic_power)
+
+     # std of uniform (0, 1) dist
+     ustd = 0.28865
+
+     # skip 0 bins
+     mccord_bin_std = 0.157352
+     ad01_bin_std = 0.05811
+
+     # as prct of ustd:
+     mccord_spread = 0.545132618755
+     ad01_spread = 0.201332132935
+
+     xs = ((self.df.nbins.values ** (1. / (5 * (1 - spread)))) *
+           self.df.ratio.values *
+           self.df.information_score.values ** ic_power)
