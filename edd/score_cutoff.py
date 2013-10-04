@@ -43,8 +43,12 @@ class ScoreCutoff(object):
         self.xs = self.__get_n_scores_uniformly(300)
         self.df = pa.DataFrame([self.__information_score(self.scores, pos_cutoff)
                                 for pos_cutoff in self.xs])
-        xs = self.df.ratio.values * self.df.information_score.values ** ic_power
+        xs = (np.sqrt(self.df.nbins.values) *
+              self.df.ratio.values *
+              self.df.information_score.values ** ic_power)
         xmin = xs[~np.isnan(xs)].min()
+        # import ipdb
+        # ipdb.set_trace()
         xs[np.isnan(xs)] = xmin
         self.ys =xs
         self.max_idx = self.ys.argmax()
