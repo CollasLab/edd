@@ -26,10 +26,21 @@ class ScoreCutoff(object):
         self.xs = None
         self.ys = None
 
-    def optimize(self, ic_power=1.15):
+    def __get_n_scores_uniformly(self, n):
+        '''
+        gets n (or close to n) values uniformly from all the
+        score values.
+        '''
+        ascores = np.unique(np.concatenate(self.scores))
+        prcts = np.linspace(0, 1, n, endpoint=False)
+        idx = np.unique((prcts * len(ascores)).astype(int))
+        return ascores[idx]
+
+    def optimize(self, ic_power=1.0):
         log.notice('searching for optimal pos bin ratio lim between %.3f and %.3f.' % (
             self.min_score, self.max_score))
-        self.xs = np.linspace(self.min_score, self.max_score, 1000)
+
+        self.xs = self.__get_n_scores_uniformly(300)
         self.df = pa.DataFrame([self.__information_score(self.scores, pos_cutoff)
                                 for pos_cutoff in self.xs])
         xs = self.df.ratio.values * self.df.information_score.values ** ic_power
