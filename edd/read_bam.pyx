@@ -4,18 +4,10 @@ import numpy as np
 cimport numpy as np
 cimport pysam.csamtools as csam
 
-DEF MAX_NAME_LEN = 50
-
-def read_chrom_sizes(chrom_size_filename):
-  d = {}
-  f = open(chrom_size_filename)
-  for line in f:
-    chrom, size = line.split()
-    if chrom == 'chrom' and size == 'size':
-      continue
-    d[chrom] = int(size)
-  f.close()
-  return d
+def read_bam_into_bins(chrom_sizes, bin_size, bam_filename):
+  b = BamCounter(chrom_sizes, bam_filename, bin_size)
+  b.process_bam()
+  return b.chrom_bins
 
 cdef class BamCounter:
   cdef:
