@@ -1,6 +1,6 @@
 import os
-#from distutils.core import setup
-from setuptools import setup
+from distutils.core import setup
+#from setuptools import setup
 from distutils.extension import Extension
 
 try:
@@ -12,14 +12,6 @@ try:
     from Cython.Distutils import build_ext # Cython should be installed via pysam
 except ImportError:
     raise Exception('please install cython first, e.g.: pip install --upgrade cython')
-
-try:
-    csamtools_path = next(p for p in (os.path.join(base_dir, 'csamtools.pxd') 
-        for base_dir in pysam.get_include()) if os.path.isfile(p))
-except StopIteration:
-    print 'unable to locate file csamtools.pxd, which is required for compilation'
-    import sys
-    sys.exit()
 
 setup(name='edd',
       version='0.1',
@@ -39,9 +31,9 @@ setup(name='edd',
           'matplotlib',
           ],
     ext_modules=[
-            Extension('edd.max_segments', ['edd/max_segments.pyx']),
-            Extension('edd.read_bam',
-                sources=['edd/read_bam.pyx', csamtools_path],
+        Extension('edd.max_segments', ['edd/max_segments.pyx']),
+        Extension('edd.read_bam',
+                 sources=['edd/read_bam.pyx'],
                  include_dirs=pysam.get_include() + [np.get_include()],
                  define_macros=pysam.get_defines()),
                  ],

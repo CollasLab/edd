@@ -2,7 +2,7 @@ from libc.stdlib cimport calloc, free
 from libc.string cimport strncpy
 import numpy as np
 cimport numpy as np
-from pysam.csamtools cimport samfile_t, bam1_t, samopen, bam_init1, bam_destroy1, samread
+cimport pysam.csamtools as csam
 
 DEF MAX_NAME_LEN = 50
 
@@ -23,14 +23,12 @@ cdef class BamCounter:
     public object chrom_bins
     double **cb
     size_t cb_len 
-    samfile_t *fp
+    csam.Samfile fp 
     size_t bin_size
 
   def __cinit__(self, chrom_sizes, bam_filename, bin_size):
-    self.fp = samopen(bam_filename, "rb", NULL)
-    if self.fp == NULL:
-      raise IOError("Failed to open BAM file %s\n" % bam_filename);
-    self.cb_len = self.fp.header.n_targets
+    self.fp = csam.Samfile(bam_filename)
+    self.cb_len = self.fp.nreferences
     self.cb = <double**> calloc(self.cb_len, sizeof(double*));
 
   def __init__(self, chrom_sizes, bam_filename, bin_size):
@@ -40,8 +38,8 @@ cdef class BamCounter:
     cdef np.ndarray[np.float64_t, ndim=1, mode='c'] a
 
     # add array bin pointers to fast lookup array
-    for i in range(self.fp.header.n_targets):
-      chrom_name = self.fp.header.target_name[i] 
+    for i in range(self.cb_len):
+      chrom_name = self.fp.getrname(i) 
       if not chrom_name in self.chrom_sizes:
         self.cb[i] = NULL
       else:
@@ -55,12 +53,13 @@ cdef class BamCounter:
 
   def process_bam(self):
     cdef:
-      bam1_t *b = bam_init1()
+      csam.bam1_t *b
       size_t start, cov, sidx
       size_t nreads = 0
       size_t start_to_bin_end
       double r 
-    while (samread(self.fp, b) >= 0):
+    while self.fp.cnext() >= 0:
+      b = self.fp.getCurrent()
       if (b.core.flag & 0x4 or 
           self.cb[b.core.tid] == NULL or 
           b.core.pos == 0):
@@ -77,7 +76,6 @@ cdef class BamCounter:
         r = start_to_bin_end / <double>b.core.l_qseq;
         self.cb[b.core.tid][sidx] += r
         self.cb[b.core.tid][sidx + 1] += (1 - r)
-    bam_destroy1(b);
     return nreads;
 
   def __dealloc__(self):
