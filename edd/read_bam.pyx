@@ -4,10 +4,10 @@ import numpy as np
 cimport numpy as np
 cimport pysam.csamtools as csam
 
-cdef np.ndarray[np.float64_t, ndim=1, mode='c'] \
-    agg_n(np.ndarray[np.float64_t, ndim=1, mode='c'] xs, int n):
+cdef np.ndarray[np.float64_t] \
+    agg_n(np.ndarray[np.float64_t] xs, int n):
   cdef:
-    np.ndarray[np.float64_t, ndim=1, mode='c'] ys
+    np.ndarray[np.float64_t] ys
     int new_len
     int i, k
   new_len = len(xs) / n
@@ -47,7 +47,7 @@ cdef class BamCounter:
     self.chrom_sizes = chrom_sizes
     self.bin_size = bin_size
     self.chrom_bins = {}
-    cdef np.ndarray[np.float64_t, ndim=1, mode='c'] a
+    cdef np.ndarray[np.float64_t] a
 
     # add array bin pointers to fast lookup array
     for i in range(self.cb_len):
