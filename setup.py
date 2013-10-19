@@ -1,6 +1,6 @@
 import os
-from distutils.core import setup
-#from setuptools import setup
+#from distutils.core import setup
+from setuptools import setup
 from distutils.extension import Extension
 
 try:

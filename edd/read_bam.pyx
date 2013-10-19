@@ -4,6 +4,26 @@ import numpy as np
 cimport numpy as np
 cimport pysam.csamtools as csam
 
+cdef np.ndarray[np.float64_t, ndim=1, mode='c'] \
+    agg_n(np.ndarray[np.float64_t, ndim=1, mode='c'] xs, int n):
+  cdef:
+    np.ndarray[np.float64_t, ndim=1, mode='c'] ys
+    int new_len
+    int i, k
+  new_len = len(xs) / n
+  if len(xs) % n > 0:
+    new_len += 1
+  ys = np.zeros(new_len, dtype=np.float64)
+  k = 0
+  for i in range(len(xs)):
+    ys[k] += xs[i]
+    if i % n == n - 1:
+      k += 1
+  return ys
+
+def aggregate_every_n_bins(bins_by_chrom, n):
+  return {k:agg_n(xs, n) for k, xs in bins_by_chrom.items()}
+
 def read_bam_into_bins(chrom_sizes, bin_size, bam_filename):
   b = BamCounter(chrom_sizes, bam_filename, bin_size)
   b.process_bam()
