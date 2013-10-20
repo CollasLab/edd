@@ -25,7 +25,7 @@ class Experiment(object):
             raise Exception("no new bin size given, check api.")
         aipd = read_bam.aggregate_every_n_bins(self.ipd, n)
         ainputd= read_bam.aggregate_every_n_bins(self.inputd, n)
-        return Experiment(aipd, ainputd, bin_size * n)
+        return Experiment(aipd, ainputd, self.bin_size * n)
 
     @classmethod
     def load_experiment(cls, chromsizes_path, ip_bam_path, 
@@ -67,8 +67,10 @@ class Experiment(object):
             d['input'] = input_cnts
             return pa.DataFrame(d)
         assert len(self.ipd) == len(self.inputd)
-        df = pa.concat([chrom_to_df(c, self.ipd[c], self.inputd[c], self.bin_size)
-            for c in ipd])
+        df = pa.concat([chrom_to_df(c, self.ipd[c], 
+            self.inputd[c], self.bin_size)
+            for c in self.ipd],
+            ignore_index=True)
         if normalize:
             return self.normalize_df(df)
         else:
