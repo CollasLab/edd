@@ -23,6 +23,7 @@ setup(name='edd',
       scripts=[
           'bin/edd',
           'bin/edd-count',
+          'bin/edd-ratio',
           'bin/edd-debug',
           'bin/edd-score-cutoff'],
       install_requires=[
