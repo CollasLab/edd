@@ -1,5 +1,4 @@
 import functools
-import multiprocessing
 import collections
 import pandas as pa
 import numpy as np
@@ -29,12 +28,17 @@ class Experiment(object):
 
     @classmethod
     def load_experiment(cls, chromsizes_path, ip_bam_path, 
-            input_bam_path, bin_size=1000):
-        pool = multiprocessing.Pool(processes=2)
+            input_bam_path, bin_size=1000, use_multiprocessing=False):
         chromsizes = cls.read_chrom_sizes(chromsizes_path)
         f = functools.partial(read_bam.read_bam_into_bins,
-                chromsizes, bin_size)
-        ipd, inputd = pool.map(f, [ip_bam_path, input_bam_path])
+                            chromsizes, bin_size)
+        if use_multiprocessing:
+            import multiprocessing
+            pool = multiprocessing.Pool(processes=2)
+            fmap = pool.map
+        else:
+            fmap = map
+        ipd, inputd = fmap(f, [ip_bam_path, input_bam_path])
         return cls(ipd, inputd, bin_size)
 
     @classmethod

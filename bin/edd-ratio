@@ -6,8 +6,9 @@ import sys
 import edd
 
 def run(chrom_size, ip, ctr, out, score_function='log-ratio',
-        bin_size=10000):
-    e = edd.load_experiment(chrom_size, ip, ctr, bin_size)
+        bin_size=10000, parallel_load=True):
+    e = edd.load_experiment(chrom_size, ip, ctr, bin_size,
+            use_multiprocessing=parallel_load)
     df = e.as_data_frame(normalize=True)
     if score_function == 'log-ratio':
         df['ratio'] = np.log(df.ip / df.input).replace(

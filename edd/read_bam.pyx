@@ -74,7 +74,8 @@ cdef class BamCounter:
       b = self.fp.getCurrent()
       if (b.core.flag & 0x4 or 
           self.cb[b.core.tid] == NULL or 
-          b.core.pos == 0):
+          b.core.pos == 0 or
+          self.cb[b.core.tid] == NULL):
         continue
       nreads += 1
       start = b.core.pos - 1 # bam 1-based, bed is 0-based
