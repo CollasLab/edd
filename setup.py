@@ -10,6 +10,7 @@ except ImportError:
     raise Exception('please install pysam first, e.g.: pip install --upgrade pysam')
 try:
     from Cython.Distutils import build_ext # Cython should be installed via pysam
+    #from Cython.Distutils.extension import Extension
 except ImportError:
     raise Exception('please install cython first, e.g.: pip install --upgrade cython')
 
@@ -36,7 +37,8 @@ setup(name='edd',
         Extension('edd.read_bam',
                  sources=['edd/read_bam.pyx'],
                  include_dirs=pysam.get_include() + [np.get_include()],
-                 define_macros=pysam.get_defines()),
+                 define_macros=pysam.get_defines(),
+                 ),
                  ],
     cmdclass = {'build_ext': build_ext},
     )

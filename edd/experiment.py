@@ -28,7 +28,7 @@ class Experiment(object):
 
     @classmethod
     def load_experiment(cls, chromsizes_path, ip_bam_path, 
-            input_bam_path, bin_size=1000, use_multiprocessing=False):
+            input_bam_path, bin_size=1000, use_multiprocessing=True):
         chromsizes = cls.read_chrom_sizes(chromsizes_path)
         f = functools.partial(read_bam.read_bam_into_bins,
                             chromsizes, bin_size)

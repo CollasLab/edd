@@ -56,8 +56,7 @@ class GenomeBinScore(object):
 
     def as_binary(self, min_ratio=0.4, count_of_positive_bins=False):
         self.opt_score = score_cutoff.ScoreCutoff.from_chrom_scores(
-            self._chrom_scores, pos_bins_as_count=count_of_positive_bins
-            ).optimize()
+            self._chrom_scores).optimize()
         if self.opt_score.ratio > min_ratio:
             log.warn(('Estimated optimal cutoff gives a too high ratio. (%.2f > %.2f'
                      + 'Consider increasing the bin size') % (self.opt_score.ratio, min_ratio))

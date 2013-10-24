@@ -12,7 +12,7 @@ class ScoreCutoff(object):
     """
     """
 
-    def __init__(self, scores, pos_bins_as_fraction=False):
+    def __init__(self, scores):
         """
 
         Arguments:
@@ -22,7 +22,6 @@ class ScoreCutoff(object):
         self.min_score = min(x.min() for x in self.scores)
         self.max_score = max(x.max() for x in self.scores)
         self._ratio = None
-        self.pos_bins_as_fraction = pos_bins_as_fraction
         self.xs = None
         self.ys = None
 
@@ -42,10 +41,10 @@ class ScoreCutoff(object):
 
         self.xs = self.__get_n_scores_uniformly(300)
         self.df = pa.DataFrame([self.__information_score(self.scores, pos_cutoff)
-                                for pos_cutoff in self.xs])
+            for pos_cutoff in self.xs])
         xs = (np.sqrt(self.df.nbins.values) *
-              self.df.ratio.values *
-              self.df.information_score.values ** ic_power)
+                self.df.ratio.values *
+                self.df.information_score.values ** ic_power)
         xmin = xs[~np.isnan(xs)].min()
         # import ipdb
         # ipdb.set_trace()
@@ -83,14 +82,14 @@ class ScoreCutoff(object):
         x = self.xs[self.max_idx]
         txt = 'x=%.2f, r=%.2f' % (x, self.ratio)
         return dict(s=txt, xy=(x, ymax),
-                     xytext=(self.xs[len(self.xs)/10.], ymax / 1.5),
-                     arrowprops=dict(facecolor='black', shrink=0.05))
+                xytext=(self.xs[len(self.xs)/10.], ymax / 1.5),
+                arrowprops=dict(facecolor='black', shrink=0.05))
 
     @classmethod
-    def from_chrom_scores(self, chrom_scores, pos_bins_as_count=False):
+    def from_chrom_scores(self, chrom_scores):
         scores = [np.array([x.score for x in xs])
-                  for xs in chrom_scores.values()]
-        return ScoreCutoff(scores, pos_bins_as_fraction=(not pos_bins_as_count))
+                for xs in chrom_scores.values()]
+        return ScoreCutoff(scores)
 
     def get_limit_score(self, ratio):
         bs = np.concatenate(self.scores)
@@ -118,19 +117,20 @@ class ScoreCutoff(object):
         r = float(npositive) / nbins
         expected = r**2 * npairs
         npositive, npositive_pairs = cls.__get_num_positive_bins_and_pairs(
-            [x > pos_cutoff for x in scores])
+                [x > pos_cutoff for x in scores])
         information_score = math.log((npositive_pairs + 1) / (expected + 1))
         return dict(score=(information_score * r),
-                    information_score=information_score, ratio=r,
-                    npositive=npositive, nbins=nbins, expected=expected,
-                    npositive_pairs=npositive_pairs, cutoff=pos_cutoff)
+                information_score=information_score, ratio=r,
+                npositive=npositive, nbins=nbins, expected=expected,
+                npositive_pairs=npositive_pairs, cutoff=pos_cutoff)
 
-#  bin size optimizer
+'''
+ #  bin size optimizer
  def optimize(self, ic_power=1.0):
      # old
      xs = (np.sqrt(self.df.nbins.values) *
-           self.df.ratio.values *
-           self.df.information_score.values ** ic_power)
+             self.df.ratio.values *
+             self.df.information_score.values ** ic_power)
 
      # std of uniform (0, 1) dist
      ustd = 0.28865
@@ -144,5 +144,6 @@ class ScoreCutoff(object):
      ad01_spread = 0.201332132935
 
      xs = ((self.df.nbins.values ** (1. / (5 * (1 - spread)))) *
-           self.df.ratio.values *
-           self.df.information_score.values ** ic_power)
+             self.df.ratio.values *
+             self.df.information_score.values ** ic_power)
+             '''

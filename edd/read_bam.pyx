@@ -1,5 +1,4 @@
 from libc.stdlib cimport calloc, free
-from libc.string cimport strncpy
 import numpy as np
 cimport numpy as np
 cimport pysam.csamtools as csam
@@ -35,6 +34,7 @@ cdef class BamCounter:
     public object chrom_bins
     double **cb
     size_t cb_len 
+    size_t *cnbins
     csam.Samfile fp 
     size_t bin_size
 
@@ -42,6 +42,7 @@ cdef class BamCounter:
     self.fp = csam.Samfile(bam_filename)
     self.cb_len = self.fp.nreferences
     self.cb = <double**> calloc(self.cb_len, sizeof(double*));
+    self.cnbins = <size_t*> calloc(self.cb_len, sizeof(size_t))
 
   def __init__(self, chrom_sizes, bam_filename, bin_size):
     self.chrom_sizes = chrom_sizes
@@ -54,6 +55,7 @@ cdef class BamCounter:
       chrom_name = self.fp.getrname(i) 
       if not chrom_name in self.chrom_sizes:
         self.cb[i] = NULL
+        self.cnbins[i] = 0
       else:
         chrom_size = self.chrom_sizes[chrom_name]
         nbins = int(chrom_size / bin_size)
@@ -62,6 +64,7 @@ cdef class BamCounter:
         a = np.zeros(nbins, dtype=np.float64)
         self.chrom_bins[chrom_name] = a
         self.cb[i] = <double *> a.data
+        self.cnbins[i] = nbins
 
   def process_bam(self):
     cdef:
@@ -74,8 +77,7 @@ cdef class BamCounter:
       b = self.fp.getCurrent()
       if (b.core.flag & 0x4 or 
           self.cb[b.core.tid] == NULL or 
-          b.core.pos == 0 or
-          self.cb[b.core.tid] == NULL):
+          b.core.pos == 0):
         continue
       nreads += 1
       start = b.core.pos - 1 # bam 1-based, bed is 0-based
@@ -83,8 +85,10 @@ cdef class BamCounter:
       start_to_bin_end = self.bin_size - (start % self.bin_size)
       if b.core.l_qseq < start_to_bin_end:
         # the whole sequence fits within a bin
+        assert(self.cnbins[b.core.tid] > sidx)
         self.cb[b.core.tid][sidx] += 1
       else:
+        assert(self.cnbins[b.core.tid] > (sidx + 1))
         # the sequence spans two bins
         r = start_to_bin_end / <double>b.core.l_qseq;
         self.cb[b.core.tid][sidx] += r
@@ -92,4 +96,5 @@ cdef class BamCounter:
     return nreads;
 
   def __dealloc__(self):
-    free(self.cb);
+    free(self.cb)
+    free(self.cnbins)
