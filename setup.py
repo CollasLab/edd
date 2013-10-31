@@ -32,6 +32,8 @@ setup(name='edd',
           'numpy',
           'pandas',
           'matplotlib',
+          'Logbook',
+          'pybedtools',
           ],
     ext_modules=[
         Extension('edd.max_segments', ['edd/max_segments.pyx']),
