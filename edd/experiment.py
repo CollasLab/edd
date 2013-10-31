@@ -3,7 +3,8 @@ import collections
 import pandas as pa
 import numpy as np
 from edd import read_bam
-
+from logbook import Logger
+log = Logger(__name__)
 
 class Experiment(object):
 
@@ -56,6 +57,7 @@ class Experiment(object):
     @classmethod
     def normalize_df(cls, df):
         input_scale_factor = df.ip.sum() / float(df.input.sum())
+        log.notice('normalizing input with scale factor: %.2f' % input_scale_factor)
         ndf = df.copy()
         ndf.input = df.input * input_scale_factor
         return ndf

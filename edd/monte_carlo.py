@@ -1,6 +1,7 @@
 import numpy as np
 from collections import Counter
-from edd import max_segments, NoPeaksException
+from edd import NoPeaksException
+from edd.max_segments import max_segments
 import itertools
 import pandas as pa
 import sys

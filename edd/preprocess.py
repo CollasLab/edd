@@ -5,7 +5,8 @@ import operator
 import logbook
 import numpy as np
 
-from edd import util, gaps, max_segments, score_cutoff
+from edd import util, gaps, score_cutoff
+from edd.max_segments import max_segments
 
 log = logbook.Logger(__name__)
 
@@ -23,6 +24,16 @@ class GenomeBinScore(object):
         """
         self._chrom_scores = chrom_scores
         self.rev_gaps = None
+
+    @classmethod
+    def from_data_frame(cls, df, score_function_name='log2-ratio'):
+        scoref= util.scoring_functions[score_function_name]
+        chromd = collections.defaultdict(list)
+        for _, x in df.iterrows():
+            b = util.bed(x['chrom'], x['start'], x['end'], 
+                    scoref(x['ip'], x['input']))
+            chromd[b.chrom].append(b)
+        return cls(chromd)
 
 
     @classmethod
@@ -54,7 +65,7 @@ class GenomeBinScore(object):
         self._chrom_scores = d
         self.rev_gaps = revdict
 
-    def as_binary(self, min_ratio=0.4, count_of_positive_bins=False):
+    def as_binary(self, min_ratio=0.4):
         self.opt_score = score_cutoff.ScoreCutoff.from_chrom_scores(
             self._chrom_scores).optimize()
         if self.opt_score.ratio > min_ratio:

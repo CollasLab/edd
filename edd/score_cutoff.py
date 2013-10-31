@@ -75,7 +75,10 @@ class ScoreCutoff(object):
             plt.title(title)
         if annotate:
             plt.annotate(**self.__get_arrow_coords())
-        plt.savefig(dst)
+        if dst is None:
+            plt.show()
+        else:
+            plt.savefig(dst)
 
     def __get_arrow_coords(self):
         ymax = self.ys[self.max_idx]

@@ -23,6 +23,7 @@ setup(name='edd',
       packages=['edd'],
       scripts=[
           'bin/edd',
+          'bin/edd2',
           'bin/edd-count',
           'bin/edd-ratio',
           'bin/edd-debug',
