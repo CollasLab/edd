@@ -1,12 +1,67 @@
+'''
+this module has a somewhat strange flow.
+The Experiment class reads bam files and from these raw data
+it's really easy to create a dataframe and normalize on those values.
+
+However, other parts of the code (maximum_segments) expects 
+an object per bin. Therefore, an utility function coverts 
+a df to bin objects. 
+
+'''
 import functools
 import collections
 import pandas as pa
 import numpy as np
-from edd import read_bam
+from edd import read_bam, util
 from logbook import Logger
 log = Logger(__name__)
 
+
+def df_as_genome_bins(df, score_function, gap_file, 
+        drop_gaps_smaller_than=1e6, normalize=True):
+    chromd = collections.defaultdict(list)
+    for _, x in df.iterrows():
+        b = util.bed(x['chrom'], x['start'], x['end'],
+                score_function(x['ip'], x['input']))
+        chromd[b.chrom].append(b)
+    return eddlib.GenomeBins.with_gaps(chromd, gapfile, drop_gaps_smaller_than)
+
+def genome_bins_as_binary(genome_bins, lim_value):
+    score = { True: 1, False: -1 }
+    r = {}
+    for k, xs in genome_bins.chrom_bins.items():
+        ys = [util.bed(x.chrom, x.start, x.end,
+                       score[x.score > lim_value])
+              for x in xs]
+        r[k] = ys
+    return eddlib.GenomeBins(r)
+
 class Experiment(object):
+    '''
+    classmethod load_experiment reads bam files.
+    Instances holds count vectors for IP/INPUT for each chrom
+    and knows the bin size (assumed to be fixed)
+
+    The method as_data_frame returns a pandas data frame of
+    formatted results. Notice the normalized argument to this
+    method.
+    '''
+
+    @classmethod
+    def load_experiment(cls, chromsizes_path, ip_bam_path, 
+            input_bam_path, bin_size=1000, use_multiprocessing=True):
+        chromsizes = cls.read_chrom_sizes(chromsizes_path)
+        f = functools.partial(read_bam.read_bam_into_bins,
+                            chromsizes, bin_size)
+        if use_multiprocessing:
+            import multiprocessing
+            pool = multiprocessing.Pool(processes=2)
+            fmap = pool.map
+        else:
+            fmap = map
+        ipd, inputd = fmap(f, [ip_bam_path, input_bam_path])
+        return cls(ipd, inputd, bin_size)
+
 
     def __init__(self, ip_countd, input_countd, bin_size):
         'should not by instansiated by user-land code'
@@ -26,21 +81,6 @@ class Experiment(object):
         aipd = read_bam.aggregate_every_n_bins(self.ipd, n)
         ainputd= read_bam.aggregate_every_n_bins(self.inputd, n)
         return Experiment(aipd, ainputd, self.bin_size * n)
-
-    @classmethod
-    def load_experiment(cls, chromsizes_path, ip_bam_path, 
-            input_bam_path, bin_size=1000, use_multiprocessing=True):
-        chromsizes = cls.read_chrom_sizes(chromsizes_path)
-        f = functools.partial(read_bam.read_bam_into_bins,
-                            chromsizes, bin_size)
-        if use_multiprocessing:
-            import multiprocessing
-            pool = multiprocessing.Pool(processes=2)
-            fmap = pool.map
-        else:
-            fmap = map
-        ipd, inputd = fmap(f, [ip_bam_path, input_bam_path])
-        return cls(ipd, inputd, bin_size)
 
     @classmethod
     def read_chrom_sizes(cls, chrom_size_filename):

@@ -36,7 +36,6 @@ setup(name='edd',
           'pybedtools',
           ],
     ext_modules=[
-        Extension('edd.max_segments', ['edd/max_segments.pyx']),
         Extension('edd.read_bam',
                  sources=['edd/read_bam.pyx'],
                  include_dirs=pysam.get_include() + [np.get_include()],
