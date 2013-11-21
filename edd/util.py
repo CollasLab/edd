@@ -33,7 +33,7 @@ def ci_lower_bound(pos, neg):
     pratio = float(pos) / n
     return (pratio + z*z/(2*n) - z * math.sqrt((pratio*(1-pratio)+z*z/(4*n))/n))/(1+z*z/n)
 
-scoring_functions = {
+score_functions = {
     'log2-ratio': log2_score,
     'CI-lower': ci_lower_bound
     }

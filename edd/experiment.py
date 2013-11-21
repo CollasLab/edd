@@ -12,6 +12,7 @@ import functools
 import collections
 import pandas as pa
 import numpy as np
+import eddlib
 from edd import read_bam, util
 from logbook import Logger
 log = Logger(__name__)
@@ -24,7 +25,7 @@ def df_as_genome_bins(df, score_function, gap_file,
         b = util.bed(x['chrom'], x['start'], x['end'],
                 score_function(x['ip'], x['input']))
         chromd[b.chrom].append(b)
-    return eddlib.GenomeBins.with_gaps(chromd, gapfile, drop_gaps_smaller_than)
+    return eddlib.GenomeBins.with_gaps(chromd, gap_file, drop_gaps_smaller_than)
 
 def genome_bins_as_binary(genome_bins, lim_value):
     score = { True: 1, False: -1 }
@@ -102,7 +103,7 @@ class Experiment(object):
         ndf.input = df.input * input_scale_factor
         return ndf
 
-    def as_data_frame(self, normalize=False):
+    def as_data_frame(self, normalize=True):
         def chrom_to_df(chrom_name, ip_cnts, input_cnts, bin_size):
             assert len(ip_cnts) == len(input_cnts)
             d = collections.OrderedDict()
@@ -121,4 +122,14 @@ class Experiment(object):
             return self.normalize_df(df)
         else:
             return df
+
+    def write_ratios(self, ratio_file):
+        log.notice('writing log ratios to %s' % ratio_file)
+        df = self.as_data_frame(normalize=True)
+        df['ratio'] = np.log(df.ip / df.input).replace(
+                [np.inf, -np.inf], np.nan)
+        rdf = df.dropna()
+        rdf.to_csv(ratio_file, sep='\t', cols=['chrom', 'start', 'end', 'ratio'],
+                header=False, index=False)
+
 

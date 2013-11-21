@@ -1,22 +1,13 @@
 #!/usr/bin/env python
 import edd
 from edd import util
+import eddlib
 import sys
 import argparse
 import os
 #import ipdb
 from logbook import Logger, FileHandler
 log = Logger('edd')
-
-def write_ratios(ratio_file, df):
-    import numpy as np
-    log.notice('writing log ratios to %s' % ratio_file)
-    df['ratio'] = np.log(df.ip / df.input).replace(
-            [np.inf, -np.inf], np.nan)
-    rdf = df.dropna()
-    rdf.to_csv(ratio_file, sep='\t', cols=['chrom', 'start', 'end', 'ratio'],
-            header=False, index=False)
-
 
 def log_parameters(args):
     log.notice('chromosome size file: %s' % args.chrom_size.name)
@@ -35,7 +26,7 @@ def log_parameters(args):
 
 
 def main(args):
-    output_name = os.path.basename(args.output_dir.rsplit('/'))
+    output_name = os.path.basename(args.output_dir.rstrip('/'))
     output_file = os.path.join(args.output_dir, output_name + '_peaks.bed')
     ratio_file = os.path.join(args.output_dir, output_name + '_ratio.bedgraph')
     bin_size = edd.parse_bin_size_as_single_number(args.bin_size)
@@ -52,8 +43,9 @@ def main(args):
         [args.ip_bam, args.control_bam]))
     opt_score.plot_results(os.path.join(args.output_dir, 'information_content.png'),
                                   title=title, annotate=True)
-    observed_result = gb.find_maximum_segments()
-    mc_res = monte_carlo.run_simulation(gb.chrom_scores, niter=args.num_trials, nprocs=args.nprocs)
+    observed_result = gb.max_segments()
+    mc_res = eddlib.MonteCarlo.run_simulation(gb.chrom_scores, 
+            niter=args.num_trials, nprocs=args.nprocs)
     tester = eddlib.max_segments.IntervalTest(observed_result, mc_res)
     tester.qvalues(below=args.qlim, pval_below=args.plim)
     tester.as_bed(output_file)

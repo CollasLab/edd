@@ -5,7 +5,8 @@ import experiment
 
 load_experiment = experiment.Experiment.load_experiment 
 
-def experiment_as_binary_bins(exp, score_function, gap_file, min_ratio):
+def experiment_as_binary_bins(exp, score_function, gap_file, min_ratio,
+        normalize=True):
     '''
     converts an experiment to a set of binary (-1, 1) bins
     separated by gaps.
@@ -14,7 +15,7 @@ def experiment_as_binary_bins(exp, score_function, gap_file, min_ratio):
     gb = experiment.df_as_genome_bins(df, score_function, gap_file)
 
     opt_score = score_cutoff.ScoreCutoff.from_chrom_scores(
-        genome_bins.chrom_bins).optimize()
+        gb.chrom_bins).optimize()
     if opt_score.ratio > min_ratio:
         log.warn(('Estimated optimal cutoff gives a too high ratio. (%.2f > %.2f'
                  + 'Consider increasing the bin size') % (opt_score.ratio, min_ratio))
