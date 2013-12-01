@@ -1,0 +1,73 @@
+#!/usr/bin/env python
+import edd
+from edd import util
+import eddlib
+import os
+import pandas as pa
+import sys
+import argparse
+from logbook import Logger, FileHandler
+log = Logger('edd')
+
+
+def log_parameters(args):
+    log.notice('chromosome size file: %s' % args.chrom_size.name)
+    log.notice('IP file: %s' % args.ip_bam)
+    log.notice('Control file: %s' % args.control_bam)
+    log.notice('output dir: %s' % args.output_dir)
+    log.notice('number of monte carlo trials: %d' % args.num_trials)
+    log.notice('number of processes: %d' % args.nprocs)
+    log.notice('pvalue lim: %.3f' % args.plim)
+    log.notice('qvalue lim: %.3f' % args.qlim)
+    log.notice('negative score scale: %.2f' % args.negative_score_scale)
+    log.notice('gap_file  : %s' % args.gap_file.name if args.gap_file else args.gap_file)
+    log.notice('drop gaps smaller than: %.2f' % args.drop_gaps_smaller_than)
+    assert os.path.isfile(args.ip_bam)
+    assert os.path.isfile(args.control_bam)
+
+def main(args):
+    output_name = os.path.basename(args.output_dir.rstrip('/'))
+    output_file = os.path.join(args.output_dir, output_name + '_peaks.bed')
+    ratio_file = os.path.join(args.output_dir, output_name + '_bin_score.bedgraph')
+    bin_size = edd.parse_bin_size_as_single_number(args.bin_size)
+
+    odf = edd.load_experiment(args.chrom_size.name, args.ip_bam, 
+            args.control_bam, bin_size,
+            use_multiprocessing=True).as_data_frame()
+    df = ci_for_df(odf, args.negative_score_scale)
+    df['chrom start end score'.split()].sort(['chrom', 'start']).to_csv(
+            ratio_file, sep='\t', index=False, header=False)
+    gb = edd.df_as_bins(df, args.gap_file, args.drop_gaps_smaller_than)
+    observed_result = gb.max_segments()
+    mc_res = eddlib.MonteCarlo.run_simulation(gb.chrom_scores, 
+            niter=args.num_trials, nprocs=args.nprocs)
+    tester = eddlib.max_segments.IntervalTest(observed_result, mc_res)
+    tester.qvalues(below=args.qlim, pval_below=args.plim)
+    tester.as_bed(output_file)
+
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument('chrom_size', type=argparse.FileType('r'))
+    parser.add_argument('ip_bam')
+    parser.add_argument('control_bam')
+    parser.add_argument('output_dir')
+    parser.add_argument('-s', '--bin-size', default='8kb',
+            help='either a range e.g. 1-10, auto or a single number')
+    parser.add_argument('-n', '--num-trials', type=int, default=100)
+    parser.add_argument('-p', '--nprocs', type=int, default=4)
+    parser.add_argument('--qlim', type=float, default=0.05)
+    parser.add_argument('--plim', type=float, default=0.05)
+    parser.add_argument('-g', '--gap-file', type=argparse.FileType('r'), default=None)
+    parser.add_argument('--drop-gaps-smaller-than', type=float, default=1e6)
+    parser.add_argument('--negative-score-scale', type=float, default=4)
+    args = parser.parse_args(sys.argv[1:])
+    if not os.path.isdir(args.output_dir):
+        os.makedirs(args.output_dir)
+    log_file = os.path.join(args.output_dir, 'log.txt')
+    log_handler = FileHandler(log_file, level='NOTICE', bubble=True)
+
+    with log_handler.applicationbound():
+    #with ipdb.launch_ipdb_on_exception():
+        log_parameters(args)
+        main(args)
