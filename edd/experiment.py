@@ -17,7 +17,6 @@ from edd import read_bam, util
 from logbook import Logger
 log = Logger(__name__)
 
-
 def df_as_genome_bins(df, score_function, gap_file, 
         drop_gaps_smaller_than=1e6, normalize=True):
     chromd = collections.defaultdict(list)
@@ -72,8 +71,10 @@ class Experiment(object):
 
     def aggregate_bins(self, times_bin_size=None, new_bin_size=None):
         if times_bin_size is not None:
-            assert times_bin_size > 0
             n = int(times_bin_size)
+            assert n > 0
+            if n == 1:
+                return self
         elif new_bin_size is not None:
             assert new_bin_size % self.bin_size == 0
             n = int(new_bin_size / self.bin_size)

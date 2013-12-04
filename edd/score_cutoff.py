@@ -6,7 +6,10 @@ from logbook import Logger
 
 log = Logger(__name__)
 
-
+def normal_opt_func(df):
+    npos = df.npositive.values
+    infoscore = df.information_score.values
+    return npos * infoscore
 
 class ScoreCutoff(object):
     """
@@ -59,7 +62,7 @@ class ScoreCutoff(object):
                 npositive=npositive, nbins=nbins, expected=expected,
                 npositive_pairs=npositive_pairs, cutoff=pos_cutoff)
 
-    def optimize(self, ic_power=1.0):
+    def optimize(self, optf=normal_opt_func):
         '''
         Finds the cutpoint that gives the highest score.
         A cutpoints score is decided by the scoring function 
@@ -75,9 +78,7 @@ class ScoreCutoff(object):
         self.df = pa.DataFrame([
             self.__information_score(self.scores, pos_cutoff)
             for pos_cutoff in self.cutpoints])
-        xs = (np.sqrt(self.df.nbins.values) *
-                self.df.ratio.values *
-                self.df.information_score.values ** ic_power)
+        xs = optf(self.df)
         xmin = xs[~np.isnan(xs)].min()
         xs[np.isnan(xs)] = xmin
         self.cutpoint_scores = xs

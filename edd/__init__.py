@@ -1,7 +1,11 @@
 import pysam as __pysam
+import collections
 import read_bam
 import score_cutoff
 import experiment
+from logbook import Logger
+import eddlib
+log = Logger(__name__)
 
 load_experiment = experiment.Experiment.load_experiment 
 
@@ -24,6 +28,18 @@ def experiment_as_binary_bins(exp, score_function, gap_file, min_ratio,
     else:
         lim_value = opt_score.lim_value
     return experiment.genome_bins_as_binary(gb, lim_value), opt_score
+
+def df_as_bins(df, gap_file, drop_gaps_smaller_than):
+    '''
+    converts a already scored df to an object
+    containing a dict of bins per chromosome, separated by gaps.
+    '''
+    chromd = collections.defaultdict(list)
+    for _, x in df.iterrows():
+        b = util.bed(x['chrom'], x['start'], x['end'],
+                x['score'])
+        chromd[b.chrom].append(b)
+    return eddlib.GenomeBins.with_gaps(chromd, gap_file, drop_gaps_smaller_than)
 
 def parse_bin_size_as_single_number(s):
     if len(s) > 2 and s[-2:].lower() == 'kb':
