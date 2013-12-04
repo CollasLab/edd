@@ -25,19 +25,54 @@ def log_parameters(args, argv):
     log.notice('negative score scale: %.2f' % args.negative_score_scale)
     log.notice('gap_file  : %s' % args.gap_file.name if args.gap_file else args.gap_file)
     log.notice('drop gaps smaller than: %.2f' % args.drop_gaps_smaller_than)
+    if args.replicate:
+        log.notice('replicate experiment: \n\tip: %s\n\tctrl: %s' % tuple(args.replicate))
     assert os.path.isfile(args.ip_bam)
     assert os.path.isfile(args.control_bam)
+
+class BamLoader(object):
+
+    def __init__(self, chrom_size_path, bin_size, neg_score_scale):
+        self.chrom_size_path = chrom_size_path
+        self.bin_size = bin_size
+        self.neg_score_scale = neg_score_scale
+
+    def load_bam(self, ip_name, ctrl_name, do_neg_scale=True):
+        neg_scale = self.neg_score_scale if do_neg_scale else 1
+        odf = edd.load_experiment(self.chrom_size_path, ip_name,
+                ctrl_name, self.bin_size,
+                use_multiprocessing=True).as_data_frame()
+        return edd.logit.ci_for_df(odf, neg_score_scale=neg_scale)
+
+    def __add_bin_scores(self, r1, r2):
+        assert len(r1.index) == len(r2.index)
+        assert (r1.index == r2.index).all()
+        assert (r1.start == r2.start).all()
+        common = r1.copy()
+        common.score += r2.score
+        return common
+
+    def load_replicate_bam(self, r1_ip_name, r1_ctrl_name, 
+            r2_ip_name, r2_ctrl_name):
+        r1 = self.load_bam(r1_ip_name, r1_ctrl_name, do_neg_scale=False)
+        r2 = self.load_bam(r2_ip_name, r2_ctrl_name, do_neg_scale=False)
+        df = self.__add_bin_scores(r1, r2)
+        df.ix[df.score < 0, 'score'] *= self.neg_score_scale
+        return df
 
 def main(args):
     output_name = os.path.basename(args.output_dir.rstrip('/'))
     output_file = os.path.join(args.output_dir, output_name + '_peaks.bed')
     ratio_file = os.path.join(args.output_dir, output_name + '_bin_score.bedgraph')
     bin_size = edd.parse_bin_size_as_single_number(args.bin_size)
+    loader = BamLoader(args.chrom_size.name, bin_size, args.negative_score_scale)
+    if args.replicate is None:
+        df = loader.load_bam(args.ip_bam, args.control_bam)
+    else:
+        r2_ip, r2_bam = args.replicate
+        df = loader.load_replicate_bam(args.ip_bam, args.control_bam,
+                    r2_ip, r2_bam)
 
-    odf = edd.load_experiment(args.chrom_size.name, args.ip_bam, 
-            args.control_bam, bin_size,
-            use_multiprocessing=True).as_data_frame()
-    df = edd.logit.ci_for_df(odf, neg_score_scale=args.negative_score_scale)
     df['chrom start end score'.split()].sort(['chrom', 'start']).to_csv(
             ratio_file, sep='\t', index=False, header=False)
     gb = edd.df_as_bins(df, args.gap_file, args.drop_gaps_smaller_than)
@@ -57,6 +92,9 @@ if __name__ == '__main__':
     parser.add_argument('output_dir')
     parser.add_argument('-s', '--bin-size', default='8kb',
             help='either a range e.g. 1-10, auto or a single number')
+    parser.add_argument('--replicate', nargs=2, 
+    help='''must be ip.bam and ctrl.bam path for replicate experiment \
+            to be merged.''')
     parser.add_argument('-n', '--num-trials', type=int, default=100)
     parser.add_argument('-p', '--nprocs', type=int, default=4)
     parser.add_argument('--qlim', type=float, default=0.05)
