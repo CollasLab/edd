@@ -22,7 +22,8 @@ def get_ci_intervals(p, tot_reads):
     return ci_low, ci_high
 
 
-def ci_for_df(odf, ci_min=0.25, min_reads_per_type=3, neg_score_scale=4, max_pos_prct=None):
+def ci_for_df(odf, ci_min=0.25, min_reads_per_type=3, neg_score_scale=4, max_pos_prct=None,
+        extrapolate_low_info_bins=True):
     df = odf.copy()
     df['tot_reads'] = df.ip + df.input
     df['avg'] = df.ip / df.tot_reads.astype(float)
@@ -30,11 +31,12 @@ def ci_for_df(odf, ci_min=0.25, min_reads_per_type=3, neg_score_scale=4, max_pos
     df['ci_diff'] = df.ci_high - df.ci_low
     df['score'] = logit(df.ix[np.logical_and(df.tot_reads > 50, 
         df.ci_diff < ci_min)].avg)
-    median_neg, median_pos = get_medians(df.dropna())
-    # positive scores led to some problems, when in doubt, be conservative
-    #df.ix[np.logical_and(np.isnan(df.score),
-    #                     df.avg > 0.5),
-    #                     'score'] = median_pos
-    df.ix[np.isnan(df.score), 'score'] = median_neg
+    if extrapolate_low_info_bins:
+        median_neg, median_pos = get_medians(df.dropna())
+        # positive scores led to some problems, when in doubt, be conservative
+        #df.ix[np.logical_and(np.isnan(df.score),
+        #                     df.avg > 0.5),
+        #                     'score'] = median_pos
+        df.ix[np.isnan(df.score), 'score'] = median_neg
     df.ix[df.score < 0, 'score'] *= neg_score_scale
     return df
