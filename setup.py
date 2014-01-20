@@ -11,7 +11,6 @@ e.g.: pip install --upgrade numpy''')
 
 try:
     import pysam
-    import numpy as np
 except ImportError:
     raise Exception('''\
 EDD has compile time dependencies on pysam. So please install pysam first.
