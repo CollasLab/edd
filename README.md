@@ -7,6 +7,15 @@ EDD is a ChIP-seq peak caller for detection of megabase domains of enrichment.
 
 ## Additional
 
+## Input Files
+The ip and input bam files are expected to be of the approximate same
+depth. EDD will perform a basic normalization by scaling input reads by a factor. 
+This will not reflect biology if the difference between IP and Input
+read length is too large. It is therefore advisable to downsample the
+experiment with the higher read count instead of scaling up the lesser
+experiment by a factor. It is up to the researcher to decide when to
+downsample instead of letting EDD perform this simple normalization.
+
 ### Getting chromosome sizes
 This can be extracted in various ways. For hg19, it is as simple as this (example borrowed from bedtools):
 ```bash
