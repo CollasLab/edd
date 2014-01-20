@@ -6,7 +6,9 @@ try:
     import pysam
     import numpy as np
 except ImportError:
-    raise Exception('please install pysam first, e.g.: pip install --upgrade pysam')
+    raise Exception('''\
+EDD has compile time dependencies to pysam. So please install pysam first.
+e.g.: pip install --upgrade pysam''')
 try:
     from Cython.Distutils import build_ext # Cython should be installed via pysam
     #from Cython.Distutils.extension import Extension
