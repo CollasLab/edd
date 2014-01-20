@@ -3,11 +3,18 @@ from setuptools import setup
 from distutils.extension import Extension
 
 try:
+    import numpy as np
+except ImportError:
+    raise Exception('''\
+EDD has compile time dependencies on numpy. So please install numpy first.
+e.g.: pip install --upgrade numpy''')
+
+try:
     import pysam
     import numpy as np
 except ImportError:
     raise Exception('''\
-EDD has compile time dependencies to pysam. So please install pysam first.
+EDD has compile time dependencies on pysam. So please install pysam first.
 e.g.: pip install --upgrade pysam''')
 try:
     from Cython.Distutils import build_ext # Cython should be installed via pysam
