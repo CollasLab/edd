@@ -4,7 +4,7 @@ import read_bam
 import score_cutoff
 import experiment
 from logbook import Logger
-import eddlib
+import algorithm
 log = Logger(__name__)
 
 load_experiment = experiment.Experiment.load_experiment 
@@ -39,5 +39,5 @@ def df_as_bins(df, gap_file, drop_gaps_smaller_than):
         b = util.bed(x['chrom'], x['start'], x['end'],
                 x['score'])
         chromd[b.chrom].append(b)
-    return eddlib.GenomeBins.with_gaps(chromd, gap_file, drop_gaps_smaller_than)
+    return alorithm.GenomeBins.with_gaps(chromd, gap_file, drop_gaps_smaller_than)
 

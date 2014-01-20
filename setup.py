@@ -1,5 +1,4 @@
 import os
-#from distutils.core import setup
 from setuptools import setup
 from distutils.extension import Extension
 
@@ -15,8 +14,8 @@ except ImportError:
     raise Exception('please install cython first, e.g.: pip install --upgrade cython')
 
 setup(name='edd',
-      version='0.1',
-      description='ChIP-seq broad domain peak caller',
+      version='0.9rc1',
+      description='Enriched domain detector for ChIP-seq data',
       url='http://github.com/eivindgl/edd',
       author='Eivind G. Lund',
       author_email='e.g.lund@medisin.uio.no',
@@ -30,6 +29,7 @@ setup(name='edd',
           'matplotlib',
           'Logbook',
           'pybedtools',
+          'rpy2'
           ],
     ext_modules=[
         Extension('edd.read_bam',
@@ -37,6 +37,8 @@ setup(name='edd',
                  include_dirs=pysam.get_include() + [np.get_include()],
                  define_macros=pysam.get_defines(),
                  ),
+        Extension('edd.algorithm.chrom_max_segments',
+                  ['edd/algorithm/chrom_max_segments.pyx']),
                  ],
     cmdclass = {'build_ext': build_ext},
     )

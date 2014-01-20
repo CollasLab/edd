@@ -1,10 +1,7 @@
 #!/usr/bin/env python
-import edd
-import edd.logit
-import eddlib
-import os
 import sys
 import argparse
+import os
 from logbook import Logger, FileHandler
 log = Logger('edd')
 
@@ -102,9 +99,9 @@ def main(args):
     gb = edd.df_as_bins(df, args.gap_file, args.drop_gaps_smaller_than)
     max_bin_score = df.score.max()
     observed_result = gb.max_segments(filter_trivial=max_bin_score)
-    mc_res = eddlib.MonteCarlo.run_simulation(gb.chrom_scores, 
+    mc_res = edd.algorithm.MonteCarlo.run_simulation(gb.chrom_scores, 
             niter=args.num_trials, nprocs=args.nprocs)
-    tester = eddlib.max_segments.IntervalTest(observed_result, mc_res)
+    tester = edd.max_segments.IntervalTest(observed_result, mc_res)
     tester.qvalues(below=args.fdr)
     tester.as_bed(output_file)
 
@@ -129,6 +126,11 @@ if __name__ == '__main__':
     parser.add_argument('--drop-gaps-smaller-than', type=float, default=1e6)
     parser.add_argument('--negative-score-scale', type=float, default=4)
     args = parser.parse_args(sys.argv[1:])
+    # these imports take time to load due to rpy2
+    # so we only load these if we actually run the program
+    # (opposed to -h)
+    import edd
+    import edd.logit
     if not os.path.isdir(args.output_dir):
         os.makedirs(args.output_dir)
     log_file = os.path.join(args.output_dir, 'log.txt')
