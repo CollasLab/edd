@@ -39,5 +39,5 @@ def df_as_bins(df, gap_file, drop_gaps_smaller_than):
         b = util.bed(x['chrom'], x['start'], x['end'],
                 x['score'])
         chromd[b.chrom].append(b)
-    return alorithm.GenomeBins.with_gaps(chromd, gap_file, drop_gaps_smaller_than)
+    return algorithm.GenomeBins.with_gaps(chromd, gap_file, drop_gaps_smaller_than)
 
