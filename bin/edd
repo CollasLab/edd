@@ -101,7 +101,7 @@ def main(args):
     observed_result = gb.max_segments(filter_trivial=max_bin_score)
     mc_res = edd.algorithm.MonteCarlo.run_simulation(gb.chrom_scores, 
             niter=args.num_trials, nprocs=args.nprocs)
-    tester = edd.max_segments.IntervalTest(observed_result, mc_res)
+    tester = edd.algorithm.max_segments.IntervalTest(observed_result, mc_res)
     tester.qvalues(below=args.fdr)
     tester.as_bed(output_file)
 
