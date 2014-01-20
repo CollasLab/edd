@@ -30,18 +30,14 @@ class Gap(object):
     def __repr__(self):
         return 'Gap(%s, %d, %d)' % (self.chrom, self.start, self.end)
 
-def read_gap_file(path, drop_smaller_than):
+def read_gap_file(path):
     res = []
-    src = pybedtools.BedTool(path)
-    filtered_src = src.merge().filter(lambda x: (x.end - x.start) >= drop_smaller_than)
-    log.notice('Gap file read. Total coverage: %.2fMB' % (
-        src.total_coverage() / 1e6))
-    for e in filtered_src:
+    for e in pybedtools.BedTool(path).merge():
         x = Gap(e.chrom, e.start, e.end)
         res.append(x)
     tot = sum(x.end - x.start for x in res)
-    log.notice('Removing gaps smaller than %.2fMB. Total coverage after filtering: %.2fMB' % (
-        (drop_smaller_than / 1e6, tot / 1e6)))
+    log.notice('Gap file read. Got %d gaps. Total coverage: %.2fMB' % (
+        len(res) ,tot / 1e6))
     return res
 
 def split_on_gaps(scores_per_chrom, gaps):

@@ -27,9 +27,9 @@ class GenomeBins(object):
                 for k, v in chrom_bins.items()}
 
     @classmethod
-    def with_gaps(cls, chrom_bins, gap_file, drop_gaps_smaller_than):
+    def with_gaps(cls, chrom_bins, gap_file):
         if gap_file is not None:
-            g = gaps.read_gap_file(gap_file, drop_gaps_smaller_than)
+            g = gaps.read_gap_file(gap_file)
             chrom_bins, _ = gaps.split_on_gaps(chrom_bins, g)
         return cls(chrom_bins)
 

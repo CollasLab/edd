@@ -29,7 +29,7 @@ def experiment_as_binary_bins(exp, score_function, gap_file, min_ratio,
         lim_value = opt_score.lim_value
     return experiment.genome_bins_as_binary(gb, lim_value), opt_score
 
-def df_as_bins(df, gap_file, drop_gaps_smaller_than):
+def df_as_bins(df, gap_file):
     '''
     converts a already scored df to an object
     containing a dict of bins per chromosome, separated by gaps.
@@ -39,5 +39,5 @@ def df_as_bins(df, gap_file, drop_gaps_smaller_than):
         b = util.bed(x['chrom'], x['start'], x['end'],
                 x['score'])
         chromd[b.chrom].append(b)
-    return algorithm.GenomeBins.with_gaps(chromd, gap_file, drop_gaps_smaller_than)
+    return algorithm.GenomeBins.with_gaps(chromd, gap_file)
 
