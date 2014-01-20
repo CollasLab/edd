@@ -10,10 +10,11 @@ a df to bin objects.
 '''
 import functools
 import collections
+import itertools
 import pandas as pa
 import numpy as np
 import eddlib
-from edd import read_bam, util
+from edd import read_bam, util, logit
 from logbook import Logger
 log = Logger(__name__)
 
@@ -35,6 +36,8 @@ def genome_bins_as_binary(genome_bins, lim_value):
               for x in xs]
         r[k] = ys
     return eddlib.GenomeBins(r)
+
+
 
 class Experiment(object):
     '''
@@ -59,7 +62,9 @@ class Experiment(object):
             fmap = pool.map
         else:
             fmap = map
+        log.notice('loading bam files')
         ipd, inputd = fmap(f, [ip_bam_path, input_bam_path])
+        log.notice('done')
         return cls(ipd, inputd, bin_size)
 
 
@@ -84,6 +89,17 @@ class Experiment(object):
         ainputd= read_bam.aggregate_every_n_bins(self.inputd, n)
         return Experiment(aipd, ainputd, self.bin_size * n)
 
+    def find_smallest_optimal_bin_size(self, nib_lim=0.01, max_ci_diff=0.25):
+        for bin_size in itertools.count(1):
+            exp = self.aggregate_bins(times_bin_size=bin_size)
+            df = exp.as_data_frame()
+            ratio_nib = logit.get_nib_ratio(df, max_ci_diff)
+            log.notice('testing bin size %d, nib ratio: %.4f' % (bin_size, ratio_nib))
+            if ratio_nib <= nib_lim:
+                return exp.bin_size
+            assert bin_size < 100, "Could not find a suitable bin size."
+
+
     @classmethod
     def read_chrom_sizes(cls, chrom_size_filename):
       d = {}
@@ -99,7 +115,7 @@ class Experiment(object):
     @classmethod
     def normalize_df(cls, df):
         input_scale_factor = df.ip.sum() / float(df.input.sum())
-        log.notice('normalizing input with scale factor: %.2f' % input_scale_factor)
+        #log.notice('normalizing input with scale factor: %.2f' % input_scale_factor)
         ndf = df.copy()
         ndf.input = df.input * input_scale_factor
         return ndf

@@ -41,9 +41,3 @@ def df_as_bins(df, gap_file, drop_gaps_smaller_than):
         chromd[b.chrom].append(b)
     return eddlib.GenomeBins.with_gaps(chromd, gap_file, drop_gaps_smaller_than)
 
-def parse_bin_size_as_single_number(s):
-    if len(s) > 2 and s[-2:].lower() == 'kb':
-        return int(s[:-2]) * 1000
-    else:
-        return int(s)
-

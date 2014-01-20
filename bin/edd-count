@@ -1,9 +1,0 @@
-#!/usr/bin/env python
-#import argparse
-import pandas as pa
-from edd import read_bam
-
-print read_bam.read_chrom_sizes
-
-
-
