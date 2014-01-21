@@ -2,11 +2,10 @@ import os, sys
 from setuptools import setup
 from distutils.extension import Extension
 
-if not (sys.version_info.major == 2 and
-        sys.version_info.minor == 7):
+if not sys.version_info[:2] == (2, 7):
     raise Exception('''\
-    Edd requires python version 2.7.x, but you are using %d.%d.%d''' % (
-        sys.version_info.major, sys.version_info.minor, sys.version_info.micro))
+    Edd requires python version 2.7.x, but you are using %d.%d.%d''' % 
+    sys.version_info[:3])
 
 try:
     import numpy as np
