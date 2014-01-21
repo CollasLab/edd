@@ -1,7 +1,19 @@
 # EDD (Enriched Domain Detector)
 
-## What
 EDD is a ChIP-seq peak caller for detection of megabase domains of enrichment. 
+
+## Installation
+The most CPU intensive parts of the algorithm have been written in Cython, which will be translated into C and compiled during installation. A consequence of this is that EDD has compile time dependencies on the following python packages: Cython, numpy and pysam. So these packages must be installed prior to installing EDD.
+
+```bash
+pip install Cython numpy pysam
+```
+
+EDD itself can be installed by running the following command from the project folder:
+```bash
+python setup.py install
+```
+
 
 ## Usage
 
