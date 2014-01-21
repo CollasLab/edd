@@ -18,7 +18,7 @@ def log_parameters(args, argv):
     log.notice('fdr lim: %.3f' % args.fdr)
     log.notice('negative score scale: %.2f' % args.negative_score_scale)
     log.notice('gap_file  : %s' % args.gap_file.name)
-    if args.replicate:
+    if False: # no replicate atm args.replicate:
         log.notice('replicate experiment: \n\tip: %s\n\tctrl: %s' % tuple(args.replicate))
     assert os.path.isfile(args.ip_bam)
     assert os.path.isfile(args.control_bam)
@@ -86,9 +86,10 @@ def main(args):
     ratio_file = os.path.join(args.output_dir, output_name + '_bin_score.bedgraph')
     bin_size = args.bin_size * 1000 if args.bin_size is not None else None
     loader = BamLoader(args.chrom_size.name, bin_size, args.negative_score_scale)
-    if args.replicate is None:
+    if True: # args.replicate is None:
         df = loader.load_single_experiment(args.ip_bam, args.control_bam)
     else:
+        # not properly tested, never run
         r2_ip, r2_bam = args.replicate
         df = loader.load_replicate_experiment(args.ip_bam, args.control_bam,
                     r2_ip, r2_bam)
