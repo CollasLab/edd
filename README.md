@@ -9,7 +9,13 @@ The most CPU intensive parts of the algorithm have been written in Cython, which
 pip install Cython numpy pysam
 ```
 
-EDD itself can be installed by running the following command from the project folder:
+The latest stable version of EDD can be installed using pip
+
+```bash
+pip install edd
+```
+
+The latest development version of EDD can be installed by running the following command from the source folder after downloading or checking out a new version:
 ```bash
 python setup.py install
 ```
