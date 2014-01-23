@@ -107,3 +107,8 @@ This example display an interesting region of a dataset analyzed with three diff
 We found the track with the middle NSS value to best represent the source data. It is, however, important to understand that none of the other two tracks are wrong or illegal. The best choice depends on interests and goals for further analysis.
 
 It is also important to understand that what is a high and low NSS value depends on the source data analyzed. A rule of thumb is that "high quality" (good antibody, soluble protein etc) ChIP-seq experiments can tolerate a higher NSS value due to less noise and therefore less heterogeneity.
+
+### Tested Operating Systems
+* Red Hat Enterprise Linux 6
+* Fedora 19
+* OS X 10.9.1
