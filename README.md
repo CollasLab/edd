@@ -42,6 +42,7 @@ edd [-h] [--bin-size BIN_SIZE] [-n NUM_TRIALS] [-p NPROCS] [--fdr FDR] [-s NEGAT
   * Instructions on how to acquire such a file can be found in the *Additional* section below.
 * ip_bam: a bam file containing aligned ChIP sequences
 * input_bam: a bam file containing aligned Input sequences
+* output_dir: a path to a directory, new or existing, that output files are stored in
 
 ### Optional Arguments
 * --bin-size
@@ -62,6 +63,14 @@ edd [-h] [--bin-size BIN_SIZE] [-n NUM_TRIALS] [-p NPROCS] [--fdr FDR] [-s NEGAT
   * A higher value favors smaller enriched domains devoid of heterogeneity.
   * More information and examples can be found in the *Additional* section below.
 
+## Output Files
+EDD creates three files in the output directory. 
+* A bed file with peaks
+* A log file describing input files, parameters and runtime data
+* A bedgraph file with binscores
+
+The peaks should always be compared against the bedgraph file in a genome browser. See the *Selecting a negative score scale parameter* example in the *Additional* section below.
+
 ## Additional
 
 ## Input Files
@@ -73,13 +82,13 @@ experiment with the higher read count instead of scaling up the lesser
 experiment by a factor. It is up to the researcher to decide when to
 downsample instead of letting EDD perform this simple normalization.
 
-### Getting chromosome sizes
+### Obtain chromosome sizes
 This can be extracted in various ways. For hg19, it is as simple as this (example borrowed from bedtools):
 ```bash
 mysql --user=genome --host=genome-mysql.cse.ucsc.edu -A -e "select chrom, size from hg19.chromInfo" > hg19.genome
 ```
 
-### Getting a Gap file
+### Acquire a Gap file
 The gap file is a bed file that identifies regions that should be excluded from the analysis. More precisely, no peak can ever span a gap region. Typical candidates for exclusion are broad spanning repeat regions such as centromeres and telomeres. Failure to include a proper gap file for an experiment will increase the number of false positives among the detected peaks. An example gap file for hg19 can be found at https://github.com/eivindgl/edd/blob/master/data/gap_hg19.bed
 
 This has been downloaded from the UCSC table browser using [these options](http://genome.ucsc.edu/cgi-bin/hgTables?hgsid=359889977&clade=mammal&org=Human&db=hg19&hgta_group=map&hgta_track=gap&hgta_table=0&hgta_regionType=genome&position=chr21%3A33031597-33041570&hgta_outputType=primaryTable&hgta_outFileName=).
@@ -89,11 +98,11 @@ The *negative score scale* (NSS) is a parameter that decides how hard EDD penali
 
 ![example picture illustrating how the negative score scale parameter affects the peaks found](data/negative_score_scale.png)
 
-This example display an interesting regions for a dataset analyzed with three different settings for the *negative score scale* parameter. The top track show the bin scores, that we visually evaluate the peak tracks against. We first notice that the detection of many domains are unaffected by changes to *NSS* (on both flanks). However, there is a larger domain in the middle that illustrates how domain detection is influenced by this parameter. 
+This example display an interesting region of a dataset analyzed with three different settings for the *negative score scale* parameter. The top track show the bin scores, that we visually evaluate the peak tracks against. We first notice that the detection of many domains are unaffected by changes to *NSS* (on both flanks). However, there is a larger domain in the middle that illustrates how domain detection is influenced by this parameter. 
 
 * The track with a low NSS value (2) detects a single large domain in the middle. This domain spans some regions that are clearly depleted.
 * The track with the middle NSS value (5) seem to detect the main trends and detected domains do not cross larger depleted regions.
-* The last track with the high NSS value (10) only detects domains in homogenically enriched regions and it therefore misses some areas with slight heterogeneity.
+* The last track with the high NSS value (10) only detects domains in homogenically enriched regions and it therefore misses some potentially interesting areas with slight heterogeneity.
 
 We found the track with the middle NSS value to best represent the source data. It is, however, important to understand that none of the other two tracks are wrong or illegal. The best choice depends on interests and goals for further analysis.
 
