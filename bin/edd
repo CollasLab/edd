@@ -115,9 +115,9 @@ See documentation at https://github.com/eivindgl/edd for more info.''')
 tab delimited file of chromosome name and size pairs.''')
     parser.add_argument('gap_file', type=argparse.FileType('r'), help='''\
     bed file marking regions to be excluded from the analysis (such as centromeres).''')
-    parser.add_argument('ip_bam')
-    parser.add_argument('control_bam')
-    parser.add_argument('output_dir')
+    parser.add_argument('ip_bam', help='ChIP bam file')
+    parser.add_argument('control_bam', help='Input/background bam file')
+    parser.add_argument('output_dir', help='output directory, will be created if not existing.')
     parser.add_argument('--bin-size', type=int, help='''\
             An integer specifying the bin size in KB. \
             Will auto select bin size based on input data \
@@ -131,7 +131,12 @@ tab delimited file of chromosome name and size pairs.''')
     Number of processes to use for the monte carlo simulation.
     One processes per physical CPU core is recommended.''')
     parser.add_argument('--fdr', type=float, default=0.05)
-    parser.add_argument('--negative-score-scale', type=float, default=6)
+    parser.add_argument('--negative-score-scale', type=float, default=6,
+                        help='''\
+Adjusts how sensitive EDD is to heterogeneity within domains. \
+Depends on Signal/Noise ratio of source files and on the interests of the researcher. \
+A "low" value favors large enriched domains with more heterogeneity. \
+A "high" value favors smaller enriched domains devoid of heterogeneity.''')
     args = parser.parse_args(sys.argv[1:])
     # these imports take time to load due to rpy2
     # so we only load these if we actually run the program
