@@ -9,6 +9,8 @@ The most CPU intensive parts of the algorithm have been written in Cython, which
 pip install Cython numpy pysam
 ```
 
+In addition, EDD requires the **R** language to be installed.
+
 The latest stable version of EDD can be installed using pip
 
 ```bash
