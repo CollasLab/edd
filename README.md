@@ -79,3 +79,10 @@ mysql --user=genome --host=genome-mysql.cse.ucsc.edu -A -e "select chrom, size f
 The gap file is a bed file that identifies regions that should be excluded from the analysis. More precisely, no peak can ever span a gap region. Typical candidates for exclusion are broad spanning repeat regions such as centromeres and telomeres. Failure to include a proper gap file for an experiment will increase the number of false positives among the detected peaks. An example gap file for hg19 can be found at https://github.com/eivindgl/edd/blob/master/data/gap_hg19.bed
 
 This has been downloaded from the UCSC table browser using [these options](http://genome.ucsc.edu/cgi-bin/hgTables?hgsid=359889977&clade=mammal&org=Human&db=hg19&hgta_group=map&hgta_track=gap&hgta_table=0&hgta_regionType=genome&position=chr21%3A33031597-33041570&hgta_outputType=primaryTable&hgta_outFileName=).
+
+### Selecting a negative score scale parameter
+The *negative score scale* (NSS) is a parameter that decides how hard EDD penalizes non-enriched bins within putative domains. The effect of this parameter is visualized below.
+
+![example picture illustrating how the negative score scale parameter affects the peaks found](data/negative_score_scale.png)
+
+This example display an interesting regions for a dataset analyzed with three different settings for the *negative score scale* parameter. The top track show the bin scores. We first notice that many domains are unchanged by changes to *NSS* (on both flanks). However, there is a larger domain in the middle that illustrates how domain detection is influenced by this parameter. The track with a low NSS value (2) detects a single large domain. The track with the middle NSS value (5) gives the result that we think fits the data best. The last track with the high NSS value (10) only detects domains in homogenically enriched regions, and this is too restrictive.
