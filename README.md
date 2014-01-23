@@ -2,14 +2,16 @@
 
 EDD is a ChIP-seq peak caller for detection of megabase domains of enrichment. 
 
-## Installation
+## Installation Requirements
 The most CPU intensive parts of the algorithm have been written in Cython, which will be translated into C and compiled during installation. A consequence of this is that EDD has compile time dependencies on the following python packages: Cython, numpy and pysam. So these packages must be installed prior to installing EDD.
 
 ```bash
 pip install Cython numpy pysam
 ```
 
-In addition, EDD requires the **R** language to be installed.
+EDD also requires **R** to be installed.
+
+## Installation
 
 The latest stable version of EDD can be installed using pip
 
