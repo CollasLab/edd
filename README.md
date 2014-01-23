@@ -39,6 +39,25 @@ edd [-h] [--bin-size BIN_SIZE] [-n NUM_TRIALS] [-p NPROCS] [--fdr FDR] [-s NEGAT
 * ip_bam: a bam file containing aligned ChIP sequences
 * input_bam: a bam file containing aligned Input sequences
 
+### Optional Arguments
+* --bin-size
+ * Bin size is auto estimated if left blank (recommended), but can be overridden.
+ * The argument must be an integer specifying the bin size in KB
+* -n --num-trials
+ * Number of monte carlo trials, by default 10,000
+* -p --nprocs
+ * Number of processes to use for monte carlo simulation, by default 4
+ * Can be increased if your computer has many cores.
+ * e.g. set this to 32 if you have 32 cores as this will reduce the running time.
+* --fdr
+ * Significance threshold for peak calling, by default 0.05
+* -s --negative-score-scale
+ * Adjusts how sensitive EDD is to heterogeneity within domains. 
+ * Depends on Signal/Noise ratio of source files and on the interests of the researcher. 
+  * A lower value favors large enriched domains with more heterogeneity. 
+  * A higher value favors smaller enriched domains devoid of heterogeneity.
+  * More information and examples can be found in the *Additional* section below.
+
 ## Additional
 
 ## Input Files
