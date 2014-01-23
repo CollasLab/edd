@@ -1,4 +1,4 @@
-# EDD (Enriched Domain Detector)
+# EDD - Enriched Domain Detector
 
 EDD is a ChIP-seq peak caller for detection of megabase domains of enrichment. 
 
