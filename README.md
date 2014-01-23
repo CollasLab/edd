@@ -27,7 +27,17 @@ All the required and optional arguments to EDD are listed here and further expla
 edd [-h] [--bin-size BIN_SIZE] [-n NUM_TRIALS] [-p NPROCS] [--fdr FDR] [-s NEGATIVE_SCORE_SCALE] chrom_size gap_file ip_bam control_bam output_dir
 ```
 ### Required Arguments
-* chrom_size - This must be a tab separated file with two columns. The first column contains chromosome names and the second contains the chromosome sizes. Instructions on how to acquire such a file can be found in the *Additional* section below.
+* chrom_size:
+  * This must be a tab separated file with two columns. 
+  * The first column contains chromosome names and the second contains the chromosome sizes.
+  * Instructions on how to acquire such a file can be found in the *Additional* section below.
+* gap_file:
+  * This must be a (possibly empty) bed file defining regions to be excluded from the analysis, such as telomeres, centromeres or other large repeat regions. 
+  * Failure to include a proper gap file will increase the number of false positive domains detected in the analysis.
+  * EDD will never detect a domain that spans a gap. 
+  * Instructions on how to acquire such a file can be found in the *Additional* section below.
+* ip_bam: a bam file containing aligned ChIP sequences
+* input_bam: a bam file containing aligned Input sequences
 
 ## Additional
 
