@@ -85,4 +85,12 @@ The *negative score scale* (NSS) is a parameter that decides how hard EDD penali
 
 ![example picture illustrating how the negative score scale parameter affects the peaks found](data/negative_score_scale.png)
 
-This example display an interesting regions for a dataset analyzed with three different settings for the *negative score scale* parameter. The top track show the bin scores. We first notice that many domains are unchanged by changes to *NSS* (on both flanks). However, there is a larger domain in the middle that illustrates how domain detection is influenced by this parameter. The track with a low NSS value (2) detects a single large domain. The track with the middle NSS value (5) gives the result that we think fits the data best. The last track with the high NSS value (10) only detects domains in homogenically enriched regions, and this is too restrictive.
+This example display an interesting regions for a dataset analyzed with three different settings for the *negative score scale* parameter. The top track show the bin scores, that we visually evaluate the peak tracks against. We first notice that the detection of many domains are unaffected by changes to *NSS* (on both flanks). However, there is a larger domain in the middle that illustrates how domain detection is influenced by this parameter. 
+
+* The track with a low NSS value (2) detects a single large domain in the middle. This domain spans some regions that are clearly depleted.
+* The track with the middle NSS value (5) seem to detect the main trends and detected domains do not cross larger depleted regions.
+* The last track with the high NSS value (10) only detects domains in homogenically enriched regions and it therefore misses some areas with slight heterogeneity.
+
+We found the track with the middle NSS value to best represent the source data. It is, however, important to understand that none of the other two tracks are wrong or illegal. The best choice depends on interests and goals for further analysis.
+
+It is also important to understand that what is a high and low NSS value depends on the source data analyzed. A rule of thumb is that "high quality" (good antibody, soluble protein etc) ChIP-seq experiments can tolerate a higher NSS value due to less noise and therefore less heterogeneity.
