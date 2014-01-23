@@ -56,7 +56,7 @@ edd [-h] [--bin-size BIN_SIZE] [-n NUM_TRIALS] [-p NPROCS] [--fdr FDR] [-s NEGAT
  * e.g. set this to 32 if you have 32 cores as this will reduce the running time.
 * --fdr
  * Significance threshold for peak calling, by default 0.05
-* -s --negative-score-scale
+* -s --negative-score-scale, by default 6
  * Adjusts how sensitive EDD is to heterogeneity within domains. 
  * Depends on Signal/Noise ratio of source files and on the interests of the researcher. 
   * A lower value favors large enriched domains with more heterogeneity. 
