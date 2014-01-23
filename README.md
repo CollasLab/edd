@@ -48,14 +48,14 @@ edd [-h] [--bin-size BIN_SIZE] [-n NUM_TRIALS] [-p NPROCS] [--fdr FDR] [-s NEGAT
 * --bin-size
  * Bin size is auto estimated if left blank (recommended), but can be overridden.
  * The argument must be an integer specifying the bin size in KB
-* -n --num-trials
- * Number of monte carlo trials, by default 10,000
+* -n --num-trials, by default 10,000
+ * Number of monte carlo trials
 * -p --nprocs
  * Number of processes to use for monte carlo simulation, by default 4
  * Can be increased if your computer has many cores.
  * e.g. set this to 32 if you have 32 cores as this will reduce the running time.
-* --fdr
- * Significance threshold for peak calling, by default 0.05
+* --fdr, by default 0.05
+ * Significance threshold for peak calling
 * -s --negative-score-scale, by default 6
  * Adjusts how sensitive EDD is to heterogeneity within domains. 
  * Depends on Signal/Noise ratio of source files and on the interests of the researcher. 
