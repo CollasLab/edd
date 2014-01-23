@@ -27,7 +27,7 @@ except ImportError:
     raise Exception('please install cython first, e.g.: pip install --upgrade cython')
 
 setup(name='edd',
-      version='0.9',
+      version='0.9.1',
       description='Enriched domain detector for ChIP-seq data',
       url='http://github.com/eivindgl/edd',
       author='Eivind G. Lund',
