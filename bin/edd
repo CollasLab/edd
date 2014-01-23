@@ -11,7 +11,7 @@ def log_parameters(args, argv):
     log.notice('string args: %s' % ' '.join(argv))
     log.notice('chromosome size file: %s' % args.chrom_size.name)
     log.notice('IP file: %s' % args.ip_bam)
-    log.notice('Control file: %s' % args.control_bam)
+    log.notice('Input file: %s' % args.input_bam)
     log.notice('output dir: %s' % args.output_dir)
     log.notice('number of monte carlo trials: %d' % args.num_trials)
     log.notice('number of processes: %d' % args.nprocs)
@@ -21,7 +21,7 @@ def log_parameters(args, argv):
     if False: # no replicate atm args.replicate:
         log.notice('replicate experiment: \n\tip: %s\n\tctrl: %s' % tuple(args.replicate))
     assert os.path.isfile(args.ip_bam)
-    assert os.path.isfile(args.control_bam)
+    assert os.path.isfile(args.input_bam)
 
 class BamLoader(object):
 
@@ -87,11 +87,11 @@ def main(args):
     bin_size = args.bin_size * 1000 if args.bin_size is not None else None
     loader = BamLoader(args.chrom_size.name, bin_size, args.negative_score_scale)
     if True: # args.replicate is None:
-        df = loader.load_single_experiment(args.ip_bam, args.control_bam)
+        df = loader.load_single_experiment(args.ip_bam, args.input_bam)
     else:
         # not properly tested, never run
         r2_ip, r2_bam = args.replicate
-        df = loader.load_replicate_experiment(args.ip_bam, args.control_bam,
+        df = loader.load_replicate_experiment(args.ip_bam, args.input_bam,
                     r2_ip, r2_bam)
 
     df['chrom start end score'.split()].sort(['chrom', 'start']).to_csv(
@@ -110,13 +110,15 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='''\
 Enriched Domain Detector -- for analysis of ChIP-seq data.
 
-See documentation at https://github.com/eivindgl/edd for more info.''')
+See documentation at https://github.com/eivindgl/edd for more info and tips.''')
     parser.add_argument('chrom_size', type=argparse.FileType('r'), help='''\
-tab delimited file of chromosome name and size pairs.''')
+This must be a tab separated file with two columns. \
+The first column contains chromosome names and the second contains the chromosome sizes.\
+''')
     parser.add_argument('gap_file', type=argparse.FileType('r'), help='''\
     bed file marking regions to be excluded from the analysis (such as centromeres).''')
     parser.add_argument('ip_bam', help='ChIP bam file')
-    parser.add_argument('control_bam', help='Input/background bam file')
+    parser.add_argument('input_bam', help='Input/control bam file')
     parser.add_argument('output_dir', help='output directory, will be created if not existing.')
     parser.add_argument('--bin-size', type=int, help='''\
             An integer specifying the bin size in KB. \
@@ -131,7 +133,7 @@ tab delimited file of chromosome name and size pairs.''')
     Number of processes to use for the monte carlo simulation.
     One processes per physical CPU core is recommended.''')
     parser.add_argument('--fdr', type=float, default=0.05)
-    parser.add_argument('--negative-score-scale', type=float, default=6,
+    parser.add_argument('-s', '--negative-score-scale', type=float, default=6,
                         help='''\
 Adjusts how sensitive EDD is to heterogeneity within domains. \
 Depends on Signal/Noise ratio of source files and on the interests of the researcher. \
