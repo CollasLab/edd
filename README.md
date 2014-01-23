@@ -64,7 +64,7 @@ edd [-h] [--bin-size BIN_SIZE] [-n NUM_TRIALS] [-p NPROCS] [--fdr FDR] [-s NEGAT
 The ip and input bam files are expected to be of the approximate same
 depth. EDD will perform a basic normalization by scaling input reads by a factor. 
 This will not reflect biology if the difference between IP and Input
-read depth is too large. It is therefore advisable to downsample the
+read depth is too large. It is therefore advisable to [downsample](http://picard.sourceforge.net/command-line-overview.shtml#DownsampleSam) the
 experiment with the higher read count instead of scaling up the lesser
 experiment by a factor. It is up to the researcher to decide when to
 downsample instead of letting EDD perform this simple normalization.
