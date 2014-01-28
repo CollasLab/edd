@@ -43,18 +43,19 @@ class MonteCarlo(object):
         indicate progress...'''
         np.random.seed()
         res = self.trial()
-        sys.stdout.write('.')
-        sys.stdout.flush()
+        #sys.stdout.write('.')
+        #sys.stdout.flush()
         return res
-        
+    workers = None 
     @classmethod
     def run_simulation(cls, observed_data, niter=4, nprocs=4):
         mc = cls(observed_data)
         sys.stdout.write('Performing %d monte carlo trials: ' % niter)
         sys.stdout.flush()
         if nprocs > 1:
-            m = multiprocessing.Pool(nprocs)
-            xs = m.map(mc, range(niter))
+            if cls.workers is None:
+                cls.workers = multiprocessing.Pool(nprocs)
+            xs = cls.workers.map(mc, range(niter))
         else:
             xs = [mc(i) for i in range(niter)]
         sys.stdout.write('\nDone\n')
