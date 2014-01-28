@@ -13,30 +13,9 @@ import collections
 import itertools
 import pandas as pa
 import numpy as np
-from edd import read_bam, util, logit
+from edd import read_bam, logit
 from logbook import Logger
 log = Logger(__name__)
-
-def df_as_genome_bins(df, score_function, gap_file, 
-        drop_gaps_smaller_than=1e6, normalize=True):
-    chromd = collections.defaultdict(list)
-    for _, x in df.iterrows():
-        b = util.bed(x['chrom'], x['start'], x['end'],
-                score_function(x['ip'], x['input']))
-        chromd[b.chrom].append(b)
-    return algorithm.GenomeBins.with_gaps(chromd, gap_file, drop_gaps_smaller_than)
-
-def genome_bins_as_binary(genome_bins, lim_value):
-    score = { True: 1, False: -1 }
-    r = {}
-    for k, xs in genome_bins.chrom_bins.items():
-        ys = [util.bed(x.chrom, x.start, x.end,
-                       score[x.score > lim_value])
-              for x in xs]
-        r[k] = ys
-    return algorithm.GenomeBins(r)
-
-
 
 class Experiment(object):
     '''

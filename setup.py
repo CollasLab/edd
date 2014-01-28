@@ -27,7 +27,7 @@ except ImportError:
     raise Exception('please install cython first, e.g.: pip install --upgrade cython')
 
 setup(name='edd',
-      version='0.9',
+      version='0.9.1',
       description='Enriched domain detector for ChIP-seq data',
       url='http://github.com/eivindgl/edd',
       author='Eivind G. Lund',
@@ -51,7 +51,8 @@ setup(name='edd',
                  define_macros=pysam.get_defines(),
                  ),
         Extension('edd.algorithm.chrom_max_segments',
-                  ['edd/algorithm/chrom_max_segments.pyx']),
+                  sources=['edd/algorithm/chrom_max_segments.pyx'],
+                  include_dirs=[np.get_include()]),
                  ],
     cmdclass = {'build_ext': build_ext},
     )
