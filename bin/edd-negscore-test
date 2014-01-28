@@ -1,0 +1,136 @@
+#!/usr/bin/env python
+import sys
+import argparse
+import os
+from logbook import Logger, FileHandler
+log = Logger('edd')
+
+
+def log_parameters(args, argv):
+    log.notice('cwd: %s' % os.getcwd())
+    log.notice('string args: %s' % ' '.join(argv))
+    log.notice('chromosome size file: %s' % args.chrom_size.name)
+    log.notice('IP file: %s' % args.ip_bam)
+    log.notice('Input file: %s' % args.input_bam)
+    log.notice('output dir: %s' % args.output_dir)
+    log.notice('fdr lim: %.3f' % args.fdr)
+    log.notice('gap_file  : %s' % args.gap_file.name)
+    assert os.path.isfile(args.ip_bam)
+    assert os.path.isfile(args.input_bam)
+
+class BamLoader(object):
+
+    def __init__(self, chrom_size_path, bin_size, neg_score_scale):
+        self.chrom_size_path = chrom_size_path
+        self.bin_size = bin_size
+        self.neg_score_scale = neg_score_scale
+        self.bin_size = bin_size
+
+    def load_bam(self, ip_name, ctrl_name):
+        return edd.load_experiment(self.chrom_size_path, ip_name,
+                ctrl_name, 1000 if self.bin_size is None else self.bin_size, 
+                use_multiprocessing=True)
+
+    def __add_bin_scores(self, r1, r2):
+        assert len(r1.index) == len(r2.index)
+        assert (r1.index == r2.index).all()
+        assert (r1.start == r2.start).all()
+        common = r1.copy()
+        common.score += r2.score
+        return common
+
+    def load_single_experiment(self, ip_name, ctrl_name):
+        exp = self.load_bam(ip_name, ctrl_name)
+        if self.bin_size is None:
+            self.bin_size = exp.find_smallest_optimal_bin_size()
+            log.notice('Optimal bin size: %d' % self.bin_size)
+        else:
+            log.notice('Using preset bin size for %s and %s: %d' % (
+                ip_name, ctrl_name, self.bin_size))
+        self.odf = exp.aggregate_bins(new_bin_size=self.bin_size).as_data_frame()
+        return edd.logit.ci_for_df(self.odf, neg_score_scale=self.neg_score_scale)
+
+    def load_replicate_experiment(self, r1_ip_name, r1_ctrl_name, 
+            r2_ip_name, r2_ctrl_name):
+        r1 = self.load_bam(r1_ip_name, r1_ctrl_name)
+        r2 = self.load_bam(r2_ip_name, r2_ctrl_name)
+        if self.bin_size is None:
+            r1_bin_size = r1.find_smallest_optimal_bin_size()
+            log.notice('Optimal bin size for %s and %s is: %d' % (
+                r1_ip_name, r1_ctrl_name, r1_bin_size))
+            r2_bin_size = r2.find_smallest_optimal_bin_size()
+            log.notice('Optimal bin size for %s and %s is: %d' % (
+                r2_ip_name, r2_ctrl_name, r2_bin_size))
+            self.bin_size = max(r1_bin_size, r2_bin_size)
+            log.notice('Using %d as bin size for both replicates.' % (
+                self.bin_size))
+        else:
+            log.notice('Using preset bin size for both replicates: %d' % (
+                 self.bin_size))
+        r1_odf = r1.aggregate_bins(new_bin_size=self.bin_size).as_data_frame()
+        r2_odf = r2.aggregate_bins(new_bin_size=self.bin_size).as_data_frame()
+        r1_df = edd.logit.ci_for_df(r1_odf, neg_score_scale=1)
+        r2_df = edd.logit.ci_for_df(r2_odf, neg_score_scale=1)
+        df = self.__add_bin_scores(r1_df, r2_df)
+        df.ix[df.score < 0, 'score'] *= self.neg_score_scale
+        return df
+
+def main(args):
+    output_name = os.path.basename(args.output_dir.rstrip('/'))
+    ratio_file = os.path.join(args.output_dir, output_name + '_bin_score.bedgraph')
+    bin_size = args.bin_size * 1000 if args.bin_size is not None else None
+    loader = BamLoader(args.chrom_size.name, bin_size, 1)
+    df = loader.load_single_experiment(args.ip_bam, args.input_bam)
+    df['chrom start end score'.split()].sort(['chrom', 'start']).to_csv(
+            ratio_file, sep='\t', index=False, header=False)
+    for neg_score_scale in range(1,20):
+        print 'running analysis for neg score', neg_score_scale
+        df = edd.logit.ci_for_df(loader.odf, neg_score_scale=neg_score_scale)
+        gb = edd.df_as_bins(df, args.gap_file.name)
+        max_bin_score = df.score.max()
+        observed_result = gb.max_segments(filter_trivial=max_bin_score)
+        mc_res = edd.algorithm.MonteCarlo.run_simulation(gb.chrom_scores, 
+                niter=1000, nprocs=32)
+        tester = edd.algorithm.max_segments.IntervalTest(observed_result, mc_res)
+        tester.qvalues(below=args.fdr)
+        output_file = os.path.join(args.output_dir, output_name + '_nss_%d_peaks.bed' % neg_score_scale)
+        tester.as_bed(output_file)
+
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description='''\
+Enriched Domain Detector -- for analysis of ChIP-seq data.
+
+See documentation at https://github.com/eivindgl/edd for more info and tips.''')
+    parser.add_argument('chrom_size', type=argparse.FileType('r'), help='''\
+This must be a tab separated file with two columns. \
+The first column contains chromosome names and the second contains the chromosome sizes.\
+''')
+    parser.add_argument('gap_file', type=argparse.FileType('r'), help='''\
+    bed file marking regions to be excluded from the analysis (such as centromeres).''')
+    parser.add_argument('ip_bam', help='ChIP bam file')
+    parser.add_argument('input_bam', help='Input/control bam file')
+    parser.add_argument('output_dir', help='output directory, will be created if not existing.')
+    parser.add_argument('--bin-size', type=int, help='''\
+            An integer specifying the bin size in KB. \
+            Will auto select bin size based on input data \
+            if not specified.''')
+    # parser.add_argument('--replicate', nargs=2, 
+    # help='''must be ip.bam and ctrl.bam path for replicate experiment \
+    #         to be merged.''')
+    parser.add_argument('--fdr', type=float, default=0.05)
+    args = parser.parse_args(sys.argv[1:])
+    assert args.bin_size is not None
+    # these imports take time to load due to rpy2
+    # so we only load these if we actually run the program
+    # (opposed to -h)
+    import edd
+    import edd.logit
+    if not os.path.isdir(args.output_dir):
+        os.makedirs(args.output_dir)
+    log_file = os.path.join(args.output_dir, 'log.txt')
+    log_handler = FileHandler(log_file, level='NOTICE', bubble=True)
+
+    with log_handler.applicationbound():
+        log_parameters(args, sys.argv)
+        main(args)
