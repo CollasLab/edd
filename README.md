@@ -42,7 +42,7 @@ edd [-h] [--bin-size BIN_SIZE] [-n NUM_TRIALS] [-p NPROCS] [--fdr FDR] [-s NEGAT
   * Instructions on how to acquire such a file can be found in the *Additional* section below.
 * ip_bam: a bam file containing aligned ChIP sequences
 * input_bam: a bam file containing aligned Input sequences
-* output_dir: a path to a directory, new or existing, that output files are stored in
+* output_dir: Path to output directory for files created by EDD.
 
 ### Optional Arguments
 * --bin-size
