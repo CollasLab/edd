@@ -49,38 +49,8 @@ class GenomeBins(object):
             num_intervals += len(xs)
         log.notice('Removed trivial intervals with score less than %.4f.' % filter_trivial)
         log.notice('%d intervals (potential peaks) remaining.' % num_intervals)
-        return MaxIntervals(segments_per_chrom)
-
-class MaxIntervals(object):
-
-    def __init__(self, intervals):
-        self._intervals = intervals
-
-    def as_bed(self, output_file, segment_cutoff):
-        """
-        Arguments:
-        - `output_file`:
-        - `segment_cutoff`: saving peaks with a score higher than cutoff
-        """
-        log.notice('Saving significant peaks.')
-        cnt = 0
-        with open(output_file, 'w') as of:
-            for chrom in sorted(self._intervals):
-                segments = self._intervals[chrom]
-                segments.sort(key=operator.itemgetter(1)) # sort by start index
-                for segment in segments:
-                    if segment.score >= segment_cutoff:
-                        cnt += 1
-                        of.write('\t'.join((chrom, str(segment.start),
-                                            str(segment.end),
-                                            str(segment.score))))
-                        of.write('\n')
+        return segments_per_chrom
         log.notice('Done. Wrote %d peaks.' % cnt)
-
-    def all_scores(self, filter_trivial=0):
-        return np.array([x.score
-            for x in toolz.concat(self._intervals.itervalues())
-            if x.score > filter_trivial])
 
 class IntervalTest(object):
 
@@ -92,7 +62,7 @@ class IntervalTest(object):
 
     def pvalues(self):
         res = []
-        for xs in self.max_intervals._intervals.values():
+        for xs in self.max_intervals.values():
             pos = len(self.mc_res) - np.searchsorted(self.mc_res,
                     [x.score for x in xs])
             pvals = (pos + 1) / float(len(self.mc_res) + 1)
@@ -113,17 +83,21 @@ class IntervalTest(object):
             len(res), below, len(pvals)))
         return res
 
+    @classmethod
+    def segments_to_bedstream(cls, segments, bedstream):
+        for segment in segments:
+            bedstream.write('\t'.join((segment.chrom, str(segment.start),
+                                str(segment.end),
+                                str(segment.score))))
+            bedstream.write('\n')
+
     def as_bed(self, output_file):
         if self._qvalues is None:
             self.qvalues()
         log.notice('Saving significant peaks.')
+        segments = [x for (_, _, x) in self._qvalues]
+        segments.sort(key=operator.itemgetter(0,1))
         with open(output_file, 'w') as of:
-            segments = [x for (_, _, x) in self._qvalues]
-            segments.sort(key=operator.itemgetter(0,1)) # sort by chrom, then start
-            for segment in segments:
-                of.write('\t'.join((segment.chrom, str(segment.start),
-                                    str(segment.end),
-                                    str(segment.score))))
-                of.write('\n')
+            self.segments_to_bedstream(segments, of)
         log.notice('Done. Wrote %d peaks.' % len(self._qvalues))
 
