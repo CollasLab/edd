@@ -31,8 +31,7 @@ def main(args):
     loader = edd.BamLoader(args.chrom_size.name, bin_size, args.gap_penalty)
     df = loader.load_single_experiment(args.ip_bam, args.input_bam)
 
-    df['chrom start end score'.split()].sort(['chrom', 'start']).to_csv(
-            ratio_file, sep='\t', index=False, header=False)
+    edd.util.save_bin_score_file(df, ratio_file)
     gb = edd.df_as_bins(df, args.gap_file)
     max_bin_score = df.score.max()
     observed_result = gb.max_segments(filter_trivial=max_bin_score)

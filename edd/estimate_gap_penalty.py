@@ -1,4 +1,11 @@
+import logit, util
+import pandas as pa
+import StringIO
+import tempfile
+import os
+
 def count_stats(xs):
+    '''xs is a bedtool instance where the name field holds the bin score'''
     stats = {'DIB': 0, 'EIB': 0}
     for x in xs:
         if float(x.name) > 0:
@@ -7,32 +14,10 @@ def count_stats(xs):
             stats['DIB'] += 1
     return stats
 
-def stats_for_peaks(peak_path, bedgraph_path):
-    ' TODO del? '
-    peaks = BedTool(peak_path)
-    bg = BedTool(bedgraph_path)
-    stats = {'name': peak_path,
-             'neg-score': path_to_neg_score(os.path.basename(peak_path))}
-    stats.update(count_stats(bg.intersect(peaks)))
-    return stats
-    
-def df_stats(xs, genome_wide):
-    df = pa.DataFrame(xs)
-    del df['name']
-    df['peak_EIB_ratio'] = df.EIB / (df.EIB + df.DIB).astype(float)
-    df['global_EIB_coverage'] = df.EIB / float(genome_wide['EIB'])
-    # not sure if the equation below is meaningful
-    df['peak_EIB_weight_ratio'] = df.EIB_sum / (df.EIB_sum + df.DIB_sum).astype(float)
-    df['global_EIB_weight_coverage'] = df.EIB_sum / float(genome_wide['EIB_sum'])
-    
-    return df.sort('neg-score').set_index('neg-score')
-
-def read_df_stats(peak_paths, bg_path):
-    return df_stats([stats_for_peaks(p,bg_path) 
-                     for p in peak_paths],
-                    count_stats())
-    
-def estimate_gap_penalty(odf, bedgraph_path, nprocs, mc_trials=100, outfile_path=None):
+def estimate_gap_penalty(odf, nprocs, mc_trials=100, outfile_path=None):
+    binscore_df = logit.ci_for_df(odf, neg_score_scale=1)
+    bedgraph_path = tempfile.mktemp()
+    util.save_bin_score_file(binscore_df, bs_path)
     bg = BedTool(bedgraph_path)
     xs = []
     
@@ -57,6 +42,8 @@ def estimate_gap_penalty(odf, bedgraph_path, nprocs, mc_trials=100, outfile_path
     df['global_EIB_coverage'] = df.EIB / float(genome_wide_stats['EIB'])
     df['score'] = df.peak_EIB_ratio**5 * df.global_EIB_coverage
     df.sort('gap-penalty', inplace=True)
-    if outfile_path is not None:
+    if outfile_path:
         df.to_csv(outfile_path, index=False)
+    # TODO perform extra gap_penalty tests for best score +- 0.5
+    os.remove(bedgraph_path)
     return df.ix[df.score.argmax()]['gap-penalty']

@@ -6,6 +6,10 @@ log = Logger(__name__)
 bed = namedtuple('BedGraph', 'chrom start end score')
 bin = namedtuple('Bin', 'chrom start end ip_count input_count')
 
+def save_bin_score_file(df, ratio_file):
+    df['chrom start end score'.split()].sort(['chrom', 'start']).to_csv(
+        ratio_file, sep='\t', index=False, header=False)
+
 def ci_lower_bound(pos, neg):
     '''
     computes lower bound of 95% confidence interval for true binomial proportion.
