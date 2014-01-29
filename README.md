@@ -33,7 +33,7 @@ edd [-h] [--bin-size BIN_SIZE] [-n NUM_TRIALS] [-p NPROCS] [--fdr FDR] [-s NEGAT
 ### Required Arguments
 * chrom_size:
   * This must be a tab separated file with two columns. 
-  * The first column contains chromosome names and the second contains the chromosome sizes.
+  * The first column contains chromosome names and the second contains chromosome sizes.
   * Instructions on how to acquire such a file can be found in the *Additional* section below.
 * gap_file:
   * This must be a (possibly empty) bed file defining regions to be excluded from the analysis, such as telomeres, centromeres or other large repeat regions. 
@@ -46,12 +46,12 @@ edd [-h] [--bin-size BIN_SIZE] [-n NUM_TRIALS] [-p NPROCS] [--fdr FDR] [-s NEGAT
 
 ### Optional Arguments
 * --bin-size
- * Bin size is auto estimated if left blank (recommended), but can be overridden.
- * The argument must be an integer specifying the bin size in KB
+ * Bin size is auto-estimated if left blank (recommended), but can also be overridden.
+ * The argument must be an integer specifying the bin size in Kb.
 * -n --num-trials, by default 10,000
- * Number of monte carlo trials
+ * Number of Monte Carlo trials
 * -p --nprocs
- * Number of processes to use for monte carlo simulation, by default 4
+ * Number of processes to use for Monte Carlo simulation, by default 4.
  * Can be increased if your computer has many cores.
  * e.g. set this to 32 if you have 32 cores as this will reduce the running time.
 * --fdr, by default 0.05
@@ -76,7 +76,7 @@ The peaks should always be compared against the bedgraph file in a genome browse
 ## Input Files
 The ip and input bam files are expected to be of the approximate same
 depth. EDD will perform a basic normalization by scaling input reads by a factor. 
-This will not reflect biology if the difference between IP and Input
+This will not reflect biology if the difference between IP and input
 read depth is too large. It is therefore advisable to [downsample](http://picard.sourceforge.net/command-line-overview.shtml#DownsampleSam) the
 experiment with the higher read count instead of scaling up the lesser
 experiment by a factor. It is up to the researcher to decide when to
@@ -94,19 +94,19 @@ The gap file is a bed file that identifies regions that should be excluded from 
 This has been downloaded from the UCSC table browser using [these options](http://genome.ucsc.edu/cgi-bin/hgTables?hgsid=359889977&clade=mammal&org=Human&db=hg19&hgta_group=map&hgta_track=gap&hgta_table=0&hgta_regionType=genome&position=chr21%3A33031597-33041570&hgta_outputType=primaryTable&hgta_outFileName=).
 
 ### Selecting a negative score scale parameter
-The *negative score scale* (NSS) is a parameter that decides how hard EDD penalizes non-enriched bins within putative domains. The effect of this parameter is visualized below.
+The *negative score scale* (NSS) is a parameter that decides how strongly EDD penalizes non-enriched bins (NIBs) within putative domains. The effect of this parameter is visualized below.
 
 ![example picture illustrating how the negative score scale parameter affects the peaks found](data/negative_score_scale.png)
 
-This example display an interesting region of a dataset analyzed with three different settings for the *negative score scale* parameter. The top track show the bin scores, that we visually evaluate the peak tracks against. We first notice that the detection of many domains are unaffected by changes to *NSS* (on both flanks). However, there is a larger domain in the middle that illustrates how domain detection is influenced by this parameter. 
+This example displays an interesting region of a dataset analyzed with three different settings for the *negative score scale* parameter. The top track shows the bin scores, against which we visually evaluate the peak tracks. We first note that the detection of many domains is unaffected by changes to *NSS* (on both flanks). However, a larger domain in the middle illustrates how domain detection is influenced by this parameter. 
 
 * The track with a low NSS value (2) detects a single large domain in the middle. This domain spans some regions that are clearly depleted.
-* The track with the middle NSS value (5) seem to detect the main trends and detected domains do not cross larger depleted regions.
-* The last track with the high NSS value (10) only detects domains in homogenically enriched regions and it therefore misses some potentially interesting areas with slight heterogeneity.
+* The track with the middle NSS value (5) seems to detect the main trends; detected domains do not cross larger depleted regions.
+* The last track with the high NSS value (10) only detects domains in homogenically enriched regions; it therefore misses some potentially interesting areas with slight heterogeneity.
 
-We found the track with the middle NSS value to best represent the source data. It is, however, important to understand that none of the other two tracks are wrong or illegal. The best choice depends on interests and goals for further analysis.
+We found the track with the middle NSS value to best represent the source data. It is, however, important to understand that none of the other two tracks are wrong or illegal. The best choice depends on the user's interests and goals for further analysis.
 
-It is also important to understand that what is a high and low NSS value depends on the source data analyzed. A rule of thumb is that "high quality" (good antibody, soluble protein etc) ChIP-seq experiments can tolerate a higher NSS value due to less noise and therefore less heterogeneity.
+It is also important to understand that what is a high and low NSS value depends on the source data analyzed. A rule of thumb is that "high quality" ChIP-seq experiments ("quality" is influenced by e.g. the protein ChIPed, the antibody used, sequencing depth) can tolerate a higher NSS value due to less noise and therefore less heterogeneity.
 
 ### Tested Operating Systems
 * Red Hat Enterprise Linux 6
