@@ -63,7 +63,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='''\
 Enriched Domain Detector -- for analysis of ChIP-seq data.
 
-See documentation at https://github.com/eivindgl/edd for more info and tips.''')
+See documentation at https://github.com/CollasLab/edd for more info and tips.''')
     parser.add_argument('chrom_size', type=argparse.FileType('r'), help='''\
 This must be a tab separated file with two columns. \
 The first column contains chromosome names and the second contains the chromosome sizes.\
