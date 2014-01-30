@@ -19,6 +19,7 @@ import tempfile
 import os
 import util
 from pybedtools import BedTool
+import algorithm.max_segments
 from algorithm.max_segments import GenomeBins, IntervalTest
 from algorithm.monte_carlo import MonteCarlo
 
