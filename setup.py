@@ -32,7 +32,8 @@ setup(name='edd',
       url='http://github.com/CollasLab/edd',
       author='Eivind G. Lund',
       author_email='e.g.lund@medisin.uio.no',
-      packages=['eddlib'],
+      packages=['eddlib',
+                'eddlib.algorithm'],
       scripts=[
           'bin/edd',
           ],
@@ -42,7 +43,8 @@ setup(name='edd',
           'matplotlib',
           'Logbook',
           'pybedtools',
-          'rpy2'
+          'rpy2',
+          'toolz'
           ],
     ext_modules=[
         Extension('eddlib.read_bam',
