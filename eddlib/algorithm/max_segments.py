@@ -50,7 +50,6 @@ class GenomeBins(object):
         log.notice('Removed trivial intervals with score less than %.4f.' % filter_trivial)
         log.notice('%d intervals (potential peaks) remaining.' % num_intervals)
         return segments_per_chrom
-        log.notice('Done. Wrote %d peaks.' % cnt)
 
     @classmethod
     def df_as_bins(cls, df, gap_file):

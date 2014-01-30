@@ -11,15 +11,14 @@ a df to bin objects.
 import functools
 import collections
 import itertools
-import pandas as pa
 import numpy as np
 import read_bam, logit
 from logbook import Logger
+import pandas as pa
 import tempfile
 import os
 import util
 from pybedtools import BedTool
-import algorithm.max_segments
 from algorithm.max_segments import GenomeBins, IntervalTest
 from algorithm.monte_carlo import MonteCarlo
 
