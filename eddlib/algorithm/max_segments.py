@@ -2,9 +2,9 @@ import operator
 import numpy as np
 import collections
 import toolz
-from util import Bedgraph
+from eddlib import util 
 from chrom_max_segments import max_segments
-from edd.algorithm import gaps
+import gaps
 import logbook
 from rpy2.robjects.packages import importr
 
@@ -37,7 +37,7 @@ class GenomeBins(object):
         def chrom_max(chrom):
             xs = max_segments(self.chrom_scores[chrom])
             bins = self.chrom_bins[chrom]
-            return [Bedgraph(bins[x.from_idx].chrom, bins[x.from_idx].start,
+            return [util.bed(bins[x.from_idx].chrom, bins[x.from_idx].start,
                         bins[x.to_idx].end, x.score) for x in xs]
         segments_per_chrom = collections.defaultdict(list)
         for x in toolz.concat(chrom_max(k) for k in self.chrom_bins):
@@ -51,6 +51,20 @@ class GenomeBins(object):
         log.notice('%d intervals (potential peaks) remaining.' % num_intervals)
         return segments_per_chrom
         log.notice('Done. Wrote %d peaks.' % cnt)
+
+    @classmethod
+    def df_as_bins(cls, df, gap_file):
+        '''
+        converts a already scored df to an object
+        containing a dict of bins per chromosome, separated by gaps.
+        '''
+        chromd = collections.defaultdict(list)
+        for _, x in df.iterrows():
+            b = util.bed(x['chrom'], x['start'], x['end'],
+                    x['score'])
+            chromd[b.chrom].append(b)
+        return cls.with_gaps(chromd, gap_file)
+
 
 class IntervalTest(object):
 

@@ -1,12 +1,20 @@
 #!/usr/bin/env python
+from __future__ import absolute_import
 import sys
 import argparse
 import os
 from logbook import Logger, FileHandler
+import eddlib
+import eddlib.experiment
+from eddlib.algorithm.max_segments import GenomeBins, IntervalTest
+from eddlib.algorithm.monte_carlo import MonteCarlo
+    
 log = Logger('edd')
 
 
 def log_parameters(args, argv):
+    import datetime
+    log.notice(str(datetime.datetime.now()))
     log.notice('cwd: %s' % os.getcwd())
     log.notice('string args: %s' % ' '.join(argv))
     log.notice('chromosome size file: %s' % args.chrom_size.name)
@@ -16,7 +24,10 @@ def log_parameters(args, argv):
     log.notice('number of monte carlo trials: %d' % args.num_trials)
     log.notice('number of processes: %d' % args.nprocs)
     log.notice('fdr lim: %.3f' % args.fdr)
-    log.notice('gap penalty: %.2f' % args.gap_penalty)
+    if args.gap_penalty is None:
+        log.notice('gap penalty is unspecified, will be auto estimated')
+    else:
+        log.notice('gap penalty: %.2f' % args.gap_penalty)
     log.notice('gap_file  : %s' % args.gap_file.name)
     if False: # no replicate atm args.replicate:
         log.notice('replicate experiment: \n\tip: %s\n\tctrl: %s' % tuple(args.replicate))
@@ -28,16 +39,19 @@ def main(args):
     output_file = os.path.join(args.output_dir, output_name + '_peaks.bed')
     ratio_file = os.path.join(args.output_dir, output_name + '_bin_score.bedgraph')
     bin_size = args.bin_size * 1000 if args.bin_size is not None else None
-    loader = edd.BamLoader(args.chrom_size.name, bin_size, args.gap_penalty)
-    df = loader.load_single_experiment(args.ip_bam, args.input_bam)
-
-    edd.util.save_bin_score_file(df, ratio_file)
-    gb = edd.df_as_bins(df, args.gap_file)
+    
+    loader = eddlib.experiment.BamLoader(args.chrom_size.name, bin_size, args.gap_penalty,
+                                         number_of_processes=args.nprocs)
+    
+    df = loader.load_single_experiment(args.ip_bam, args.input_bam, args.gap_file.name)
+    
+    eddlib.util.save_bin_score_file(df, ratio_file)
+    gb = GenomeBins.df_as_bins(df, args.gap_file)
     max_bin_score = df.score.max()
     observed_result = gb.max_segments(filter_trivial=max_bin_score)
-    mc_res = edd.algorithm.MonteCarlo.run_simulation(gb.chrom_scores, 
+    mc_res = MonteCarlo.run_simulation(gb.chrom_scores, 
             niter=args.num_trials, nprocs=args.nprocs)
-    tester = edd.algorithm.max_segments.IntervalTest(observed_result, mc_res)
+    tester = IntervalTest(observed_result, mc_res)
     tester.qvalues(below=args.fdr)
     tester.as_bed(output_file)
 
@@ -69,8 +83,7 @@ The first column contains chromosome names and the second contains the chromosom
     Number of processes to use for the monte carlo simulation.
     One processes per physical CPU core is recommended.''')
     parser.add_argument('--fdr', type=float, default=0.05)
-    parser.add_argument('-p', '--gap-penalty', type=float, default=6,
-                        help='''\
+    parser.add_argument('-g', '--gap-penalty', type=float, help='''\
 Leave unspecificed for auto-estimation. \
 Adjusts how sensitive EDD is to heterogeneity within domains. \
 Depends on Signal/Noise ratio of source files and on the interests of the researcher. \
@@ -80,13 +93,12 @@ A "high" value favors smaller enriched domains devoid of heterogeneity.''')
     # these imports take time to load due to rpy2
     # so we only load these if we actually run the program
     # (opposed to -h)
-    import edd
-    import edd.logit
     if not os.path.isdir(args.output_dir):
         os.makedirs(args.output_dir)
     log_file = os.path.join(args.output_dir, 'log.txt')
-    log_handler = FileHandler(log_file, level='NOTICE', bubble=True)
+    log_handler = FileHandler(log_file, level='NOTICE', bubble=True, mode='w')
 
     with log_handler.applicationbound():
         log_parameters(args, sys.argv)
         main(args)
+

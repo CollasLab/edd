@@ -1,8 +1,5 @@
 import pandas as pa
 from collections import namedtuple as __ntuple
-from max_segments import GenomeBins
-from monte_carlo import MonteCarlo
-import max_segments
 
 Bedgraph = __ntuple('BedGraph', 'chrom start end score')
 

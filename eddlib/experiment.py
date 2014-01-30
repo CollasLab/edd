@@ -13,8 +13,15 @@ import collections
 import itertools
 import pandas as pa
 import numpy as np
-from edd import read_bam, logit
+import read_bam, logit
 from logbook import Logger
+import tempfile
+import os
+import util
+from pybedtools import BedTool
+from algorithm.max_segments import GenomeBins, IntervalTest
+from algorithm.monte_carlo import MonteCarlo
+
 log = Logger(__name__)
 
 class Experiment(object):
@@ -128,3 +135,99 @@ class Experiment(object):
                 header=False, index=False)
 
 
+class BamLoader(object):
+
+    def __init__(self, chrom_size_path, bin_size, neg_score_scale,
+                 number_of_processes=4):
+        self.chrom_size_path = chrom_size_path
+        self.bin_size = bin_size
+        self.neg_score_scale = neg_score_scale
+        self.bin_size = bin_size
+        self.number_of_processes = number_of_processes
+
+    def load_bam(self, ip_name, ctrl_name):
+        return Experiment.load_experiment(self.chrom_size_path, ip_name,
+                ctrl_name, 1000 if self.bin_size is None else self.bin_size, 
+                use_multiprocessing=True)
+
+    def __add_bin_scores(self, r1, r2):
+        assert len(r1.index) == len(r2.index)
+        assert (r1.index == r2.index).all()
+        assert (r1.start == r2.start).all()
+        common = r1.copy()
+        common.score += r2.score
+        return common
+
+    def load_single_experiment(self, ip_name, ctrl_name, gap_file):
+        exp = self.load_bam(ip_name, ctrl_name)
+        if self.bin_size is None:
+            self.bin_size = exp.find_smallest_optimal_bin_size()
+            log.notice('Optimal bin size: %d' % self.bin_size)
+        else:
+            log.notice('Using preset bin size for %s and %s: %d' % (
+                ip_name, ctrl_name, self.bin_size))
+        odf = exp.aggregate_bins(new_bin_size=self.bin_size).as_data_frame()
+
+        if self.neg_score_scale is None:
+            log.notice('Estimating gap penalty')
+            self.neg_score_scale = estimate_gap_penalty(odf,
+                                                        self.number_of_processes,
+                                                        gap_file)
+            log.notice('Gap penalty estimated to %.1f' % self.neg_score_scale)
+        return logit.ci_for_df(odf, neg_score_scale=self.neg_score_scale)
+
+##############################
+# BEGIN ESTIMATE GAP PENALTY #
+##############################
+import StringIO
+
+def count_stats(xs):
+    '''xs is a bedtool instance where the name field holds the bin score'''
+    stats = {'DIB': 0, 'EIB': 0}
+    for x in xs:
+        if float(x.name) > 0:
+            stats['EIB'] += 1
+        else:
+            stats['DIB'] += 1
+    return stats
+
+def estimate_gap_penalty(odf, nprocs, gap_file, mc_trials=100, outfile_path=None):
+    # gap file marks unalignable regions, something else than
+    # gap_penalty TODO : clean this up!
+    binscore_df = logit.ci_for_df(odf, neg_score_scale=1)
+    bedgraph_path = tempfile.mktemp()
+    util.save_bin_score_file(binscore_df, bedgraph_path)
+    bg = BedTool(bedgraph_path)
+    xs = []
+    
+    for neg_score_scale in range(2,20):
+        log.notice('Testing a gap penalty of %.1f' % neg_score_scale)
+        df = logit.ci_for_df(odf, neg_score_scale=neg_score_scale)
+        gb = GenomeBins.df_as_bins(df, gap_file)
+        max_bin_score = df.score.max()
+        observed_result = gb.max_segments(filter_trivial=max_bin_score)
+        mc_res = MonteCarlo.run_simulation(gb.chrom_scores, 
+                                                         niter=mc_trials, nprocs=nprocs)
+        tester = IntervalTest(observed_result, mc_res)
+        segments = [segment for (segment, pval) in tester.pvalues() if pval < 0.05]
+        peaks_sb = StringIO.StringIO()
+        tester.segments_to_bedstream(segments, peaks_sb)
+        peaks = BedTool(peaks_sb.getvalue(), from_string=True)
+        d = count_stats(bg.intersect(peaks))
+        d['gap-penalty'] = neg_score_scale
+        xs.append(d)
+    genome_wide_stats = count_stats(bg)
+    df = pa.DataFrame(xs)
+    df['peak_EIB_ratio'] = df.EIB / (df.EIB + df.DIB).astype(float)
+    df['global_EIB_coverage'] = df.EIB / float(genome_wide_stats['EIB'])
+    df['score'] = df.peak_EIB_ratio**5 * df.global_EIB_coverage
+    df.sort('gap-penalty', inplace=True)
+    if outfile_path:
+        df.to_csv(outfile_path, index=False)
+    # TODO perform extra gap_penalty tests for best score +- 0.5
+    os.remove(bedgraph_path)
+    return df.ix[df.score.argmax()]['gap-penalty']
+
+############################
+# END ESTIMATE GAP PENALTY #
+############################

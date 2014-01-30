@@ -1,6 +1,9 @@
 from collections import namedtuple
 import math
 from logbook import Logger
+import logit
+import pandas as pa
+import StringIO
 
 log = Logger(__name__)
 bed = namedtuple('BedGraph', 'chrom start end score')
