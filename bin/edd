@@ -28,6 +28,10 @@ def log_parameters(args, argv):
         log.notice('gap penalty is unspecified, will be auto estimated')
     else:
         log.notice('gap penalty: %.2f' % args.gap_penalty)
+    if args.bin_size is None:
+        log.notice('bin size is unspecified, will be auto estimated')
+    else:
+        log.notice('bin_size: %d KB' % args.bin_size)
     log.notice('unalignable regions file  : %s' % args.unalignable_regions.name)
     if False: # no replicate atm args.replicate:
         log.notice('replicate experiment: \n\tip: %s\n\tctrl: %s' % tuple(args.replicate))
