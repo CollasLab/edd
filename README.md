@@ -89,12 +89,12 @@ This can be extracted in various ways. For hg19, it is as simple as this (exampl
 mysql --user=genome --host=genome-mysql.cse.ucsc.edu -A -e "select chrom, size from hg19.chromInfo" > hg19.genome
 ```
 
-### Acquire a Gap file
-The gap file is a bed file that identifies regions that should be excluded from the analysis. More precisely, no peak can ever span a gap region. Typical candidates for exclusion are broad spanning repeat regions such as centromeres and telomeres. Failure to include a proper gap file for an experiment will increase the number of false positives among the detected peaks. An example gap file for hg19 can be found [here](data/gap_hg19.bed).
+### Acquire unalignable regions
+The unalignable regions file is a bed file that identifies regions that should be excluded from the analysis. More precisely, no peak can ever span an unalignable region. Typical candidates for exclusion are broad spanning repeat regions such as centromeres and telomeres. Failure to include a proper unalignable regions file for an analysis will increase the number of false positives among the detected peaks. An example unalignable regions file for hg19 can be found [here](data/gap_hg19.bed).
 
 This has been downloaded from the UCSC table browser using [these options](http://genome.ucsc.edu/cgi-bin/hgTables?hgsid=359889977&clade=mammal&org=Human&db=hg19&hgta_group=map&hgta_track=gap&hgta_table=0&hgta_regionType=genome&position=chr21%3A33031597-33041570&hgta_outputType=primaryTable&hgta_outFileName=).
 
-### Selecting a gap penalty
+### Understanding the gap penalty parameter
 The gap penalty parameter decides how strongly EDD penalizes non-enriched bins (NIBs) within putative domains. The effect of this parameter is visualized below.
 
 ![example picture illustrating how the gap penalty parameter affects the peaks found](data/negative_score_scale.png)
