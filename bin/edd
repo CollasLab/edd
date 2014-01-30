@@ -28,7 +28,7 @@ def log_parameters(args, argv):
         log.notice('gap penalty is unspecified, will be auto estimated')
     else:
         log.notice('gap penalty: %.2f' % args.gap_penalty)
-    log.notice('gap_file  : %s' % args.gap_file.name)
+    log.notice('unalignable regions file  : %s' % args.unalignable_regions.name)
     if False: # no replicate atm args.replicate:
         log.notice('replicate experiment: \n\tip: %s\n\tctrl: %s' % tuple(args.replicate))
     assert os.path.isfile(args.ip_bam)
@@ -43,10 +43,10 @@ def main(args):
     loader = eddlib.experiment.BamLoader(args.chrom_size.name, bin_size, args.gap_penalty,
                                          number_of_processes=args.nprocs)
     
-    df = loader.load_single_experiment(args.ip_bam, args.input_bam, args.gap_file.name)
+    df = loader.load_single_experiment(args.ip_bam, args.input_bam, args.unalignable_regions.name)
     
     eddlib.util.save_bin_score_file(df, ratio_file)
-    gb = GenomeBins.df_as_bins(df, args.gap_file)
+    gb = GenomeBins.df_as_bins(df, args.unalignable_regions)
     max_bin_score = df.score.max()
     observed_result = gb.max_segments(filter_trivial=max_bin_score)
     mc_res = MonteCarlo.run_simulation(gb.chrom_scores, 
@@ -65,7 +65,7 @@ See documentation at https://github.com/eivindgl/edd for more info and tips.''')
 This must be a tab separated file with two columns. \
 The first column contains chromosome names and the second contains the chromosome sizes.\
 ''')
-    parser.add_argument('gap_file', type=argparse.FileType('r'), help='''\
+    parser.add_argument('unalignable_regions', type=argparse.FileType('r'), help='''\
     bed file marking regions to be excluded from the analysis (such as centromeres).''')
     parser.add_argument('ip_bam', help='ChIP bam file')
     parser.add_argument('input_bam', help='Input/control bam file')

@@ -28,21 +28,21 @@ python setup.py install
 ## Usage
 All the required and optional arguments to EDD are listed here and further explained below
 ```
-edd [-h] [--bin-size BIN_SIZE] [-n NUM_TRIALS] [-p NPROCS] [--fdr FDR] [-s NEGATIVE_SCORE_SCALE] chrom_size gap_file ip_bam control_bam output_dir
+edd [-h] [--bin-size BIN_SIZE] [-n NUM_TRIALS] [-p NPROCS] [--fdr FDR] [-g GAP_PENALTY] chrom_size unalignable_regions ip_bam control_bam output_dir
 ```
 ### Required Arguments
-* chrom_size:
+* **chrom_size**:
   * This must be a tab separated file with two columns. 
   * The first column contains chromosome names and the second contains chromosome sizes.
   * Instructions on how to acquire such a file can be found in the *Additional* section below.
-* gap_file:
+* **unalignable_regions**:
   * This must be a (possibly empty) bed file defining regions to be excluded from the analysis, such as telomeres, centromeres or other large repeat regions. 
-  * Failure to include a proper gap file will increase the number of false positive domains detected in the analysis.
-  * EDD will never detect a domain that spans a gap. 
+  * Failure to include a proper file will increase the number of false positive domains detected in the analysis.
+  * EDD will never detect a domain that spans an unalignable region. 
   * Instructions on how to acquire such a file can be found in the *Additional* section below.
-* ip_bam: a bam file containing aligned ChIP sequences
-* input_bam: a bam file containing aligned Input sequences
-* output_dir: Path to output directory for files created by EDD.
+* **ip_bam**: a bam file containing aligned ChIP sequences
+* **input_bam**: a bam file containing aligned Input sequences
+* **output_dir**: Path to output directory for files created by EDD.
 
 ### Optional Arguments
 * --bin-size
@@ -93,20 +93,28 @@ The gap file is a bed file that identifies regions that should be excluded from 
 
 This has been downloaded from the UCSC table browser using [these options](http://genome.ucsc.edu/cgi-bin/hgTables?hgsid=359889977&clade=mammal&org=Human&db=hg19&hgta_group=map&hgta_track=gap&hgta_table=0&hgta_regionType=genome&position=chr21%3A33031597-33041570&hgta_outputType=primaryTable&hgta_outFileName=).
 
-### Selecting a negative score scale parameter
-The *negative score scale* (NSS) is a parameter that decides how strongly EDD penalizes non-enriched bins (NIBs) within putative domains. The effect of this parameter is visualized below.
+### Selecting a gap penalty
+The gap penalty parameter decides how strongly EDD penalizes non-enriched bins (NIBs) within putative domains. The effect of this parameter is visualized below.
 
-![example picture illustrating how the negative score scale parameter affects the peaks found](data/negative_score_scale.png)
+![example picture illustrating how the gap penalty parameter affects the peaks found](data/negative_score_scale.png)
 
-This example displays an interesting region of a dataset analyzed with three different settings for the *negative score scale* parameter. The top track shows the bin scores, against which we visually evaluate the peak tracks. We first note that the detection of many domains is unaffected by changes to *NSS* (on both flanks). However, a larger domain in the middle illustrates how domain detection is influenced by this parameter. 
+This example displays an interesting region of a dataset analyzed with
+three different settings for the *gap penalty* parameter. The top
+track shows the bin scores, against which we visually evaluate the
+peak tracks. We first note that the detection of many domains is
+unaffected by changes to the *gap penalty* (on both flanks). However, a larger domain in the middle illustrates how domain detection is influenced by this parameter. 
 
-* The track with a low NSS value (2) detects a single large domain in the middle. This domain spans some regions that are clearly depleted.
-* The track with the middle NSS value (5) seems to detect the main trends; detected domains do not cross larger depleted regions.
-* The last track with the high NSS value (10) only detects domains in homogenically enriched regions; it therefore misses some potentially interesting areas with slight heterogeneity.
+* The track with a low gap penalty (2) detects a single large domain in the middle. This domain spans some regions that are clearly depleted.
+* The track with the middle gap penalty (5) seems to detect the main trends; detected domains do not cross larger depleted regions.
+* The last track with the high gap penalty (10) only detects domains in homogenically enriched regions; it therefore misses some potentially interesting areas with slight heterogeneity.
 
-We found the track with the middle NSS value to best represent the source data. It is, however, important to understand that none of the other two tracks are wrong or illegal. The best choice depends on the user's interests and goals for further analysis.
+We found the track with the middle gap penalty (5) to best represent the source data. It is, however, important to understand that none of the other two tracks are wrong or illegal. The best choice depends on the user's interests and goals for further analysis.
 
-It is also important to understand that what is a high and low NSS value depends on the source data analyzed. A rule of thumb is that "high quality" ChIP-seq experiments ("quality" is influenced by e.g. the protein ChIPed, the antibody used, sequencing depth) can tolerate a higher NSS value due to less noise and therefore less heterogeneity.
+It is also important to understand that what is a high and low gap
+penalty depends on the source data analyzed. A rule of thumb is that
+"high quality" ChIP-seq experiments ("quality" is influenced by e.g.
+the protein ChIPed, the antibody used, sequencing depth) can tolerate
+a higher gap penalty value due to less noise and therefore less heterogeneity.
 
 ### Tested Operating Systems
 * Red Hat Enterprise Linux 6

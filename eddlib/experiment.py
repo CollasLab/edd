@@ -201,7 +201,7 @@ def estimate_gap_penalty(odf, nprocs, gap_file, mc_trials=100, outfile_path=None
     xs = []
     
     for neg_score_scale in range(2,20):
-        log.notice('Testing a gap penalty of %.1f' % neg_score_scale)
+        log.notice('Testing gap penalty: %.1f' % neg_score_scale)
         df = logit.ci_for_df(odf, neg_score_scale=neg_score_scale)
         gb = GenomeBins.df_as_bins(df, gap_file)
         max_bin_score = df.score.max()
