@@ -43,7 +43,7 @@ edd [-h] [--bin-size BIN_SIZE] [-n NUM_TRIALS] [-p NPROCS] [--fdr FDR] [-g GAP_P
   * Instructions on how to acquire such a file can be found in the *Additional* section below.
 * **ip_bam**: a bam file containing aligned ChIP sequences
 * **input_bam**: a bam file containing aligned Input sequences
-* **output_dir**: Path to output directory for files created by EDD.
+* **output_dir**: Path to output directory for files created by EDD. Will be created if not existing. The output directory is expected to be unique to the analysis. (e.g. *peaks/HSF_LMNA_rep1* and not just *peaks*)
 
 ### Optional Arguments
 * --bin-size
