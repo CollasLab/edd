@@ -55,7 +55,8 @@ class MonteCarlo(object):
         if nprocs > 1:
             if cls.workers is None:
                 cls.workers = multiprocessing.Pool(nprocs)
-            xs = cls.workers.map(mc, range(niter))
+                # async makes keyboard interrupt work
+            xs = cls.workers.map_async(mc, range(niter)).get(99999999)
         else:
             xs = [mc(i) for i in range(niter)]
         sys.stdout.write('\nDone\n')

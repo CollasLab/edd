@@ -43,8 +43,7 @@ setup(name='edd',
           'matplotlib',
           'Logbook',
           'pybedtools',
-          'rpy2',
-          'toolz'
+          'rpy2'
           ],
     ext_modules=[
         Extension('eddlib.read_bam',

@@ -45,7 +45,8 @@ class Experiment(object):
         if use_multiprocessing:
             import multiprocessing
             pool = multiprocessing.Pool(processes=2)
-            fmap = pool.map
+            # async makes keyboard interrupt work (and not stall)
+            fmap = lambda g, xs: pool.map_async(g, xs).get(99999999)
         else:
             fmap = map
         log.notice('loading bam files')
