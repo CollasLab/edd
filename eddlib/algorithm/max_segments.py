@@ -47,8 +47,9 @@ class GenomeBins(object):
         for xs in segments_per_chrom.values():
             xs.sort(key=operator.attrgetter('start'))
             num_intervals += len(xs)
-        log.notice('Removed trivial intervals with score less than %.4f.' % filter_trivial)
-        log.notice('%d intervals (potential peaks) remaining.' % num_intervals)
+        if filter_trivial > 0:
+            log.notice('Removed trivial intervals with score less than %.4f.' % filter_trivial)
+            log.notice('%d intervals (potential peaks) remaining.' % num_intervals)
         return segments_per_chrom
 
     @classmethod
@@ -71,10 +72,6 @@ class GenomeBins(object):
                 for x in xs]
              for k, xs in self.chrom_bins.items()})
     
-    def find_max_score(self):
-        return max(chrom_scores.max()
-                   for chrom_scores in self.chrom_scores.values())
-
 
 class IntervalTest(object):
 

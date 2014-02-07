@@ -52,6 +52,7 @@ def main(args):
     gb = GenomeBins.df_as_bins(df, args.unalignable_regions)
     max_bin_score = df.score.max()
     observed_result = gb.max_segments(filter_trivial=max_bin_score)
+    log.notice('Running %d monte carlo trials' % args.num_trials)
     mc_res = MonteCarlo.run_simulation(gb.chrom_scores, 
             niter=args.num_trials, nprocs=args.nprocs)
     tester = IntervalTest(observed_result, mc_res)

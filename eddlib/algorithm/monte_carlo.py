@@ -1,6 +1,5 @@
 import numpy as np
 from chrom_max_segments import maximum_segment
-import sys
 from bisect import bisect_left
 import multiprocessing
 
@@ -43,15 +42,11 @@ class MonteCarlo(object):
         indicate progress...'''
         np.random.seed()
         res = self.trial()
-        #sys.stdout.write('.')
-        #sys.stdout.flush()
         return res
     workers = None 
     @classmethod
     def run_simulation(cls, observed_data, niter=4, nprocs=4):
         mc = cls(observed_data)
-        sys.stdout.write('Performing %d monte carlo trials: ' % niter)
-        sys.stdout.flush()
         if nprocs > 1:
             if cls.workers is None:
                 cls.workers = multiprocessing.Pool(nprocs)
@@ -59,7 +54,6 @@ class MonteCarlo(object):
             xs = cls.workers.map_async(mc, range(niter)).get(99999999)
         else:
             xs = [mc(i) for i in range(niter)]
-        sys.stdout.write('\nDone\n')
         return np.sort(xs)
 
 
