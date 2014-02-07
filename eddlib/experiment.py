@@ -193,9 +193,8 @@ def count_stats(xs):
     return stats
 
 def estimate_gap_penalty(odf, nprocs, gap_file, mc_trials=100, outfile_path=None):
-    # gap file marks unalignable regions, something else than
-    # gap_penalty TODO : clean this up!
     binscore_df = logit.ci_for_df(odf, neg_score_scale=1)
+    binscore_gb = GenomeBins.df_as_bins(binscore_df, gap_file)
     bedgraph_path = tempfile.mktemp()
     util.save_bin_score_file(binscore_df, bedgraph_path)
     bg = BedTool(bedgraph_path)
@@ -203,9 +202,8 @@ def estimate_gap_penalty(odf, nprocs, gap_file, mc_trials=100, outfile_path=None
     
     for neg_score_scale in range(2,20):
         log.notice('Testing gap penalty: %.1f' % neg_score_scale)
-        df = logit.ci_for_df(odf, neg_score_scale=neg_score_scale)
-        gb = GenomeBins.df_as_bins(df, gap_file)
-        max_bin_score = df.score.max()
+        gb = binscore_gb.scale_neg_scores(neg_score_scale)
+        max_bin_score = gb.find_max_score()
         observed_result = gb.max_segments(filter_trivial=max_bin_score)
         mc_res = MonteCarlo.run_simulation(gb.chrom_scores, 
                                                          niter=mc_trials, nprocs=nprocs)

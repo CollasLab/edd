@@ -64,6 +64,17 @@ class GenomeBins(object):
             chromd[b.chrom].append(b)
         return cls.with_gaps(chromd, gap_file)
 
+    def scale_neg_scores(self, scale):
+        return GenomeBins(
+            {k:[util.bed(x.chrom, x.start, x.end,
+                         x.score if x.score > 0 else x.score * scale)
+                for x in xs]
+             for k, xs in self.chrom_bins.items()})
+    
+    def find_max_score(self):
+        return max(chrom_scores.max()
+                   for chrom_scores in self.chrom_scores.values())
+
 
 class IntervalTest(object):
 
