@@ -9,32 +9,26 @@ import os
 from math import sqrt
 from logbook import Logger
 import itertools
+import pandas as pa
+import scipy.stats
 log = Logger(__name__)
 
-###########################
-# BEGIN ESTIMATE BIN SIZE #
-###########################
+def corrcoeff(odf):
+    df = pa.DataFrame(dict(left=odf.score[:-1].values,
+                           right=odf.score[1:].values)).dropna()
+    return scipy.stats.spearmanr(df.left, df.right)[0]
+    
 def bin_size(orig_exp, nib_lim=0.01, max_ci_diff=0.25):
     for bin_size in itertools.count(1):
         exp = orig_exp.aggregate_bins(times_bin_size=bin_size)
-        df = exp.as_data_frame()
-        ratio_nib = logit.get_nib_ratio(df, max_ci_diff)
-        log.notice('testing bin size %d, nib ratio: %.4f' % (bin_size, ratio_nib))
-        if ratio_nib <= nib_lim:
+        df = logit.ci_for_df(exp.as_data_frame(), max_ci_diff,
+                             neg_score_scale=1, extrapolate_low_info_bins=False)
+        ratio_nib = logit.get_nib_ratio(df)
+        pvar = corrcoeff(df)
+        log.notice('testing bin size %d, nib ratio: %.4f, spearmanr: %.3f' % (bin_size, ratio_nib, pvar))
+        if ratio_nib <= nib_lim and pvar > 0.35:
             return exp.bin_size
         assert bin_size < 100, "Could not find a suitable bin size."
-
-#########################
-# END ESTIMATE BIN SIZE #
-#########################
-
-##############################
-# BEGIN ESTIMATE GAP PENALTY #
-##############################
-
-# a and b are the current bounds; the minimum is between them.
-# c is the center pointer pushed slightly left towards a
- 
 
 class GapPenalty(object):
 
@@ -113,7 +107,3 @@ class GapPenalty(object):
         log.notice('Gap penalty of %.2f gives a score of %.3f' % (gap_penalty, d['score']))
         self.__cache[gap_penalty] = d
         return d['score']
-
-############################
-# END ESTIMATE GAP PENALTY #
-############################

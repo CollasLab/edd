@@ -46,13 +46,7 @@ def ci_for_df(odf, ci_min=0.25, pscore_lim=10, neg_score_scale=4,
         df.ix[np.isnan(df.score), 'score'] = median_neg
     return df
 
-def get_nib_ratio(df, max_ci_diff):
-    df = df.copy()
-    df['tot'] = df.ip + df.input
-    df['avg'] = df.ip / df.tot.astype(float)
-    nbins_with_reads = (df.tot > 0).sum()
-    req = np.minimum(df.avg, 1 - df.avg) * df.tot > 10
-    df = df.ix[req]
-    ci_low, ci_high = get_ci_intervals(df.avg, df.tot)
-    nbins_ok = (ci_high - ci_low < max_ci_diff).sum()
+def get_nib_ratio(df):
+    nbins_with_reads = (df.tot_reads > 0).sum()
+    nbins_ok = len(df.score.dropna())
     return float(nbins_with_reads - nbins_ok) / nbins_with_reads
