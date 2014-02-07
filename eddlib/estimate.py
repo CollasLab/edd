@@ -8,7 +8,25 @@ import util
 import os
 from math import sqrt
 from logbook import Logger
+import itertools
 log = Logger(__name__)
+
+###########################
+# BEGIN ESTIMATE BIN SIZE #
+###########################
+def bin_size(orig_exp, nib_lim=0.01, max_ci_diff=0.25):
+    for bin_size in itertools.count(1):
+        exp = orig_exp.aggregate_bins(times_bin_size=bin_size)
+        df = exp.as_data_frame()
+        ratio_nib = logit.get_nib_ratio(df, max_ci_diff)
+        log.notice('testing bin size %d, nib ratio: %.4f' % (bin_size, ratio_nib))
+        if ratio_nib <= nib_lim:
+            return exp.bin_size
+        assert bin_size < 100, "Could not find a suitable bin size."
+
+#########################
+# END ESTIMATE BIN SIZE #
+#########################
 
 ##############################
 # BEGIN ESTIMATE GAP PENALTY #

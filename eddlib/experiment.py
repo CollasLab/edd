@@ -10,7 +10,6 @@ a df to bin objects.
 '''
 import functools
 import collections
-import itertools
 import numpy as np
 import logit
 from logbook import Logger
@@ -72,20 +71,6 @@ class Experiment(object):
         aipd = read_bam.aggregate_every_n_bins(self.ipd, n)
         ainputd= read_bam.aggregate_every_n_bins(self.inputd, n)
         return Experiment(aipd, ainputd, self.bin_size * n)
-
-    def find_smallest_optimal_bin_size(self, nib_lim=0.01, max_ci_diff=0.25):
-        '''
-        TODO move to estimate.py
-        '''
-        for bin_size in itertools.count(1):
-            exp = self.aggregate_bins(times_bin_size=bin_size)
-            df = exp.as_data_frame()
-            ratio_nib = logit.get_nib_ratio(df, max_ci_diff)
-            log.notice('testing bin size %d, nib ratio: %.4f' % (bin_size, ratio_nib))
-            if ratio_nib <= nib_lim:
-                return exp.bin_size
-            assert bin_size < 100, "Could not find a suitable bin size."
-
 
     @classmethod
     def read_chrom_sizes(cls, chrom_size_filename):
@@ -163,7 +148,7 @@ class BamLoader(object):
     def load_single_experiment(self, ip_name, ctrl_name, gap_file):
         exp = self.load_bam(ip_name, ctrl_name)
         if self.bin_size is None:
-            self.bin_size = exp.find_smallest_optimal_bin_size()
+            self.bin_size = estimate.bin_size(exp)
             log.notice('Optimal bin size: %d' % self.bin_size)
         else:
             log.notice('Using preset bin size for %s and %s: %d' % (
