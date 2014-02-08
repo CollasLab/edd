@@ -18,7 +18,7 @@ def corrcoeff(odf):
                            right=odf.score[1:].values)).dropna()
     return scipy.stats.spearmanr(df.left, df.right)[0]
     
-def bin_size(orig_exp, nib_lim=0.01, max_ci_diff=0.25):
+def bin_size(orig_exp, nib_lim=0.01, max_ci_diff=0.25, min_corcoef=0.3):
     for bin_size in itertools.count(1):
         exp = orig_exp.aggregate_bins(times_bin_size=bin_size)
         df = logit.ci_for_df(exp.as_data_frame(), max_ci_diff,
@@ -26,18 +26,33 @@ def bin_size(orig_exp, nib_lim=0.01, max_ci_diff=0.25):
         ratio_nib = logit.get_nib_ratio(df)
         pvar = corrcoeff(df)
         log.notice('testing bin size %d, nib ratio: %.4f, spearmanr: %.3f' % (bin_size, ratio_nib, pvar))
-        if ratio_nib <= nib_lim and pvar > 0.35:
+        if ratio_nib <= nib_lim and pvar > min_corcoef:
             return exp.bin_size
         assert bin_size < 100, "Could not find a suitable bin size."
 
-class GapPenalty(object):
-
+def golden_section_search(f, left, mid, right, precision):
     phi = (1 + sqrt(5))/2
     resphi = 2 - phi
 
+    def g(l, m, r):
+        log.notice('searching [%.2f, %.2f, %.2f]' % (l, m, r))
+        if abs(l - r) < precision:
+            return (l + r)/2.0
+        # Create a new possible center, in the area between c and b, pushed against c
+        mr = m + resphi*(r - m)
+        if f(mr) > f(m):
+            return g(m, mr, r)
+        else:
+            return g(mr, m, l)
+    return g(left, mid, right)
+
+        
+class GapPenalty(object):
+
+
 
     def __init__(self, orig_bins, bedgraph_path, nprocs, gap_file,
-                 mc_trials, pval_lim, precision=0.2):
+                 mc_trials, pval_lim):
         self.orig_bins = orig_bins
         self.bedgraph_path = bedgraph_path
         self.bins_bedtool = BedTool(self.bedgraph_path)
@@ -45,7 +60,6 @@ class GapPenalty(object):
         self.gap_file = gap_file
         self.mc_trials = mc_trials
         self.pval_lim = pval_lim
-        self.precision = precision
         self.__cache = {}
         self.genome_wide_stats = self.count_stats(self.bins_bedtool)
 
@@ -72,17 +86,11 @@ class GapPenalty(object):
         rval = cls(binscore_gb, bedgraph_path, nprocs, gap_file, mc_trials, pval_lim)
         return rval
 
-    def search(self, left=2.0, mid=10.0, right=24.0):
-        log.notice('searching [%.2f, %.2f, %.2f]' % (left, mid, right))
-        if abs(left - right) < self.precision:
-            return (left + right)/2.0
-        # Create a new possible center, in the area between c and b, pushed against c
-        mid_right = mid + self.resphi*(right - mid)
-        if self.comp_score(mid_right) > self.comp_score(mid):
-            return self.search(mid, mid_right, right)
-        else:
-            return self.search(mid_right, mid, left)
 
+    def search(self, left=2.0, mid=10.0, right=30, precision=0.1):
+        return golden_section_search(self.comp_score, left, mid, right,
+                                     precision)
+        
     def comp_score(self, gap_penalty):
         '''compute_score_given_gap_penalty'''
         if gap_penalty in self.__cache:
