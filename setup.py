@@ -42,7 +42,8 @@ setup(name='edd',
           'pandas',
           'Logbook',
           'pybedtools',
-          'rpy2'
+          'rpy2',
+          'scipy'
           ],
     ext_modules=[
         Extension('eddlib.read_bam',
