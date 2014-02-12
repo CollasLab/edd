@@ -40,7 +40,6 @@ setup(name='edd',
       install_requires=[
           'numpy',
           'pandas',
-          'matplotlib',
           'Logbook',
           'pybedtools',
           'rpy2'
