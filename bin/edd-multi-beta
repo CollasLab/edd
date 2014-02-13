@@ -1,0 +1,78 @@
+#!/usr/bin/env python
+import sys
+import argparse
+import os
+from logbook import Logger, FileHandler
+import eddlib
+import eddlib.experiment
+from eddlib.algorithm.max_segments import GenomeBins, IntervalTest
+from eddlib.algorithm.monte_carlo import MonteCarlo
+    
+log = Logger('edd-multi-beta')
+
+def main(args):
+    output_name = os.path.basename(args.output_dir.rstrip('/'))
+    output_file = os.path.join(args.output_dir, output_name + '_peaks.bed')
+    ratio_file = os.path.join(args.output_dir, output_name + '_bin_score.bedgraph')
+    bin_size = args.bin_size * 1000 if args.bin_size is not None else None
+    
+    loader = eddlib.experiment.BamLoader(args.chrom_size.name, bin_size, args.gap_penalty,
+                                         number_of_processes=args.nprocs)
+    
+    loader.load_multiple_experiments(args.ips_bam, args.ctrs_bam,
+                                     which_merge_method=args.merge_method)
+    df = loader.get_df(args.unalignable_regions.name)
+    
+    eddlib.util.save_bin_score_file(df, ratio_file)
+    gb = GenomeBins.df_as_bins(df, args.unalignable_regions)
+    max_bin_score = df.score.max()
+    observed_result = gb.max_segments(filter_trivial=max_bin_score)
+    log.notice('Running %d monte carlo trials' % args.num_trials)
+    mc_res = MonteCarlo.run_simulation(gb.chrom_scores, 
+            niter=args.num_trials, nprocs=args.nprocs)
+    tester = IntervalTest(observed_result, mc_res)
+    tester.qvalues(below=args.fdr)
+    tester.as_bed(output_file)
+
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description='''\
+Enriched Domain Detector -- for analysis of ChIP-seq data.
+
+See documentation at https://github.com/CollasLab/edd for more info and tips.''')
+    parser.add_argument('chrom_size', type=argparse.FileType('r'), help='''\
+This must be a tab separated file with two columns. \
+The first column contains chromosome names and the second contains the chromosome sizes.\
+''')
+    parser.add_argument('unalignable_regions', type=argparse.FileType('r'), help='''\
+    bed file marking regions to be excluded from the analysis (such as centromeres).''')
+    parser.add_argument('ips_bam', nargs='+', help='ChIP bam files')
+    parser.add_argument('ctrs_bam', nargs='+', help='Input/control bam files')
+    parser.add_argument('output_dir', help='output directory, will be created if not existing.')
+    parser.add_argument('bin_size', type=int)
+    parser.add_argument('-n', '--num-trials', type=int, default=10000, help='''\
+    Number of trials in monte carlo simulation''')
+    parser.add_argument('-p', '--nprocs', type=int, default=4, help='''\
+    Number of processes to use for the monte carlo simulation.
+    One processes per physical CPU core is recommended.''')
+    parser.add_argument('--fdr', type=float, default=0.05)
+    parser.add_argument('-m', '--merge-method', default='median',
+                        choices='median sum normalized-sum'.split())
+    parser.add_argument('-g', '--gap-penalty', type=float, help='''\
+Leave unspecificed for auto-estimation. \
+Adjusts how sensitive EDD is to heterogeneity within domains. \
+Depends on Signal/Noise ratio of source files and on the interests of the researcher. \
+A "low" value favors large enriched domains with more heterogeneity. \
+A "high" value favors smaller enriched domains devoid of heterogeneity.''')
+    args = parser.parse_args(sys.argv[1:])
+    # these imports take time to load due to rpy2
+    # so we only load these if we actually run the program
+    # (opposed to -h)
+    if not os.path.isdir(args.output_dir):
+        os.makedirs(args.output_dir)
+    log_file = os.path.join(args.output_dir, 'log.txt')
+    log_handler = FileHandler(log_file, level='NOTICE', bubble=True, mode='w')
+
+    with log_handler.applicationbound():
+        main(args)
+
