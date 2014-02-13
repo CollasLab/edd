@@ -159,7 +159,7 @@ class BamLoader(object):
     def load_single_experiment(self, ip_name, ctrl_name):
         self.df = self.__load_experiment(ip_name, ctrl_name)
 
-    def load_multiple_experiments(self, ip_names, ctrl_names):
+    def load_multiple_experiments(self, ip_names, ctrl_names, which_merge_method='median'):
         assert self.bin_size is not None
         assert len(ip_names) == len(ctrl_names)
         scores = []
@@ -168,8 +168,19 @@ class BamLoader(object):
             scores.append(np.array(x.score))
         df = x['chrom start end'.split()].copy()
         scores = pa.DataFrame(np.array(scores).transpose())
-        # TODO support mean, sum and normalized sum in addition to median
-        df['score'] = scores.median(axis=1).values
+        # TODO support mean, sum and normalized sum in addition to
+        # median
+        log.info('merging replicate experiments using method: %s' % which_merge_method)
+        if which_merge_method == 'median':
+            df['score'] = scores.median(axis=1).values
+        elif which_merge_method == 'sum':
+            df['score'] = scores.sum(axis=1).values
+        elif which_merge_method == 'normalized-sum':
+            sums = scores.dropna().abs().sum(axis=0)
+            norm_factors = sums / sums.min()
+            df['score'] = (scores / norm_factors).sum(axis=1).values
+        else:
+            raise ArgumentError('%s is an illegal value for argument `which_merge_method`' % which_merge_method)
         self.df = df
 
     def get_df(self, unalignable_regions):
