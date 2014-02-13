@@ -19,7 +19,7 @@ def main(args):
     loader = eddlib.experiment.BamLoader(args.chrom_size.name, bin_size, args.gap_penalty,
                                          number_of_processes=args.nprocs)
     
-    loader.load_multiple_experiments(args.ips_bam, args.ctrs_bam,
+    loader.load_multiple_experiments(args.ips, args.ctrs,
                                      which_merge_method=args.merge_method)
     df = loader.get_df(args.unalignable_regions.name)
     
@@ -46,10 +46,10 @@ The first column contains chromosome names and the second contains the chromosom
 ''')
     parser.add_argument('unalignable_regions', type=argparse.FileType('r'), help='''\
     bed file marking regions to be excluded from the analysis (such as centromeres).''')
-    parser.add_argument('ips_bam', nargs='+', help='ChIP bam files')
-    parser.add_argument('ctrs_bam', nargs='+', help='Input/control bam files')
     parser.add_argument('output_dir', help='output directory, will be created if not existing.')
     parser.add_argument('bin_size', type=int)
+    parser.add_argument('--ips', nargs='+', help='ChIP bam files')
+    parser.add_argument('--ctrs', nargs='+', help='Input/control bam files')
     parser.add_argument('-n', '--num-trials', type=int, default=10000, help='''\
     Number of trials in monte carlo simulation''')
     parser.add_argument('-p', '--nprocs', type=int, default=4, help='''\
