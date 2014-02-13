@@ -36,6 +36,7 @@ setup(name='edd',
                 'eddlib.algorithm'],
       scripts=[
           'bin/edd',
+          'bin/edd-multi-beta',
           ],
       install_requires=[
           'numpy',
