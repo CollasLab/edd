@@ -45,8 +45,8 @@ def main(args):
     
     loader = eddlib.experiment.BamLoader(args.chrom_size.name, bin_size, args.gap_penalty,
                                          number_of_processes=args.nprocs)
-    
-    df = loader.load_single_experiment(args.ip_bam, args.input_bam, args.unalignable_regions.name)
+    loader.load_single_experiment(args.ip_bam, args.input_bam)
+    df = loader.get_df(args.unalignable_regions.name)
     
     eddlib.util.save_bin_score_file(df, ratio_file)
     gb = GenomeBins.df_as_bins(df, args.unalignable_regions)

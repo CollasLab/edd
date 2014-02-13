@@ -21,8 +21,7 @@ def corrcoeff(odf):
 def bin_size(orig_exp, nib_lim=0.01, max_ci_diff=0.25, min_corcoef=0.3):
     for bin_size in itertools.count(1):
         exp = orig_exp.aggregate_bins(times_bin_size=bin_size)
-        df = logit.ci_for_df(exp.as_data_frame(), max_ci_diff,
-                             neg_score_scale=1, extrapolate_low_info_bins=False)
+        df = logit.ci_for_df(exp.as_data_frame(), ci_min=max_ci_diff)
         ratio_nib = logit.get_nib_ratio(df)
         pvar = corrcoeff(df)
         log.notice('testing bin size %d, nib ratio: %.4f, spearmanr: %.3f' % (bin_size, ratio_nib, pvar))
@@ -54,8 +53,6 @@ def golden_section_search(f, left, mid, right, precision):
         
 class GapPenalty(object):
 
-
-
     def __init__(self, orig_bins, bedgraph_path, nprocs, gap_file,
                  mc_trials, pval_lim):
         self.orig_bins = orig_bins
@@ -83,8 +80,7 @@ class GapPenalty(object):
         return stats
         
     @classmethod
-    def instantiate(cls, odf, nprocs, gap_file, mc_trials, pval_lim):
-        binscore_df = logit.ci_for_df(odf, neg_score_scale=1)
+    def instantiate(cls, binscore_df, nprocs, gap_file, mc_trials, pval_lim):
         binscore_gb = GenomeBins.df_as_bins(binscore_df, gap_file)
         bedgraph_path = tempfile.mktemp()
         util.save_bin_score_file(binscore_df, bedgraph_path)

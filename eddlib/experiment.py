@@ -145,7 +145,7 @@ class BamLoader(object):
         common.score += r2.score
         return common
 
-    def load_single_experiment(self, ip_name, ctrl_name, gap_file):
+    def __load_experiment(self, ip_name, ctrl_name):
         exp = self.load_bam(ip_name, ctrl_name)
         if self.bin_size is None:
             self.bin_size = estimate.bin_size(exp)
@@ -154,14 +154,37 @@ class BamLoader(object):
             log.notice('Using preset bin size for %s and %s: %d' % (
                 ip_name, ctrl_name, self.bin_size))
         odf = exp.aggregate_bins(new_bin_size=self.bin_size).as_data_frame()
+        return logit.ci_for_df(odf)
+        
+    def load_single_experiment(self, ip_name, ctrl_name):
+        self.df = self.__load_experiment(ip_name, ctrl_name)
 
+    def load_multiple_experiments(self, ip_names, ctrl_names):
+        assert self.bin_size is not None
+        assert len(ip_names) == len(ctrl_names)
+        scores = []
+        for ip_name, ctrl_name in zip(ip_names, ctrl_names):
+            x = self.__load_experiment(ip_name, ctrl_name)
+            scores.append(np.array(x.score))
+        df = x['chrom start end'.split()].copy()
+        scores = pa.DataFrame(np.array(scores).transpose())
+        # TODO support mean, sum and normalized sum in addition to median
+        df['score'] = scores.median(axis=1).values
+        self.df = df
+
+    def get_df(self, unalignable_regions):
         if self.neg_score_scale is None:
+            # TODO move this somewhere.
+            # does not fit with rest of function
             log.notice('Estimating gap penalty')
+            binscore_df = logit.extrapolate_low_info_bins(self.df)
             gpe = estimate.GapPenalty.instantiate(
-                odf, self.number_of_processes, gap_file,
+                binscore_df, self.number_of_processes, unalignable_regions,
                 mc_trials=100, pval_lim=0.05)
             self.neg_score_scale = gpe.search()
             gpe.cleanup()
             log.notice('Gap penalty estimated to %.1f' % self.neg_score_scale)
-        return logit.ci_for_df(odf, neg_score_scale=self.neg_score_scale)
+        
+        df = logit.neg_score_scale(self.df, self.neg_score_scale)
+        return logit.extrapolate_low_info_bins(df)
 
