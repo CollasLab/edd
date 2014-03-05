@@ -44,7 +44,9 @@ setup(name='edd',
           'Logbook',
           'pybedtools',
           'rpy2',
-          'scipy'
+          'scipy',
+          'patsy', # statsmodels dependency
+          'statsmodels'
           ],
     ext_modules=[
         Extension('eddlib.read_bam',
