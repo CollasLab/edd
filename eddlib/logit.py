@@ -22,13 +22,18 @@ def get_ci_intervals(p, tot_reads):
     return ci_low, ci_high
 
 
-def ci_for_df(odf, ci_min=0.25):
+def ci_for_df(odf, ci_min=0.30):
+    log.info('ci for df with agresti_coull')
     df = odf.copy()
     df['tot_reads'] = df.ip + df.input
     df['avg'] = df.ip / df.tot_reads.astype(float)
-    df['ci_low'], df['ci_high'] = proportion_confint(df.ip, df.tot_reads)
+    df['ci_low'], df['ci_high'] = proportion_confint(df.ip, df.tot_reads,
+                                                     method='agresti_coull')
     df['ci_diff'] = df.ci_high - df.ci_low
     small_CI = df.ci_diff < ci_min
+    log.info('%d of %d has a small CI (%.2f%%)' % (small_CI.sum(),
+                                                   len(small_CI),
+                                                   float(small_CI.sum()) / len(small_CI)))
     df['score'] = logit(df.ix[small_CI].avg)
     return df
 
