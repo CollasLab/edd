@@ -12,16 +12,6 @@ def get_medians(df):
     pos = np.median(df.ix[df.score > 0].score)
     return neg, pos
 
-def get_ci_intervals(p, tot_reads):
-    z = 1.96
-    const1 = p + (z**2)/(2*tot_reads)
-    const2 = z * np.sqrt((p * (1-p) + z**2 / (4 * tot_reads)) / tot_reads)
-    divisor = 1 +  z**2 / tot_reads
-    ci_low = (const1 - const2) / divisor
-    ci_high = (const1 + const2) / divisor
-    return ci_low, ci_high
-
-
 def ci_for_df(odf, ci_method, ci_min=0.25):
     df = odf.copy()
     df['tot_reads'] = df.ip + df.input
@@ -32,9 +22,6 @@ def ci_for_df(odf, ci_method, ci_min=0.25):
                                                      method=ci_method)
     df['ci_diff'] = df.ci_high - df.ci_low
     small_CI = df.ci_diff < ci_min
-    log.info('%d of %d has a small CI (%.2f%%)' % (small_CI.sum(),
-                                                   len(small_CI),
-                                                   float(small_CI.sum()) / len(small_CI)))
     df['score'] = logit(df.ix[small_CI].avg)
     return df
 

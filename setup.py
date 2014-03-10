@@ -44,6 +44,7 @@ setup(name='edd',
           'statsmodels',
           'patsy', # statsmodels dependency
           'pandas',
+          'python-dateutil', # pandas dependency
           'scipy',
           'numpy',
           ],

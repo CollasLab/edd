@@ -1,7 +1,7 @@
 import operator
 import numpy as np
 import collections
-import toolz
+import itertools
 from eddlib import util 
 from chrom_max_segments import max_segments
 import gaps
@@ -40,7 +40,7 @@ class GenomeBins(object):
             return [util.bed(bins[x.from_idx].chrom, bins[x.from_idx].start,
                         bins[x.to_idx].end, x.score) for x in xs]
         segments_per_chrom = collections.defaultdict(list)
-        for x in toolz.concat(chrom_max(k) for k in self.chrom_bins):
+        for x in itertools.chain.from_iterable(chrom_max(k) for k in self.chrom_bins):
             if x.score > filter_trivial:
                 segments_per_chrom[x.chrom].append(x)
         num_intervals = 0
