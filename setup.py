@@ -36,18 +36,16 @@ setup(name='edd',
                 'eddlib.algorithm'],
       scripts=[
           'bin/edd',
-          'bin/edd-multi-beta',
-          'bin/edd-extra-files-test',
           ],
       install_requires=[
-          'numpy',
-          'pandas',
           'Logbook',
           'pybedtools',
           'rpy2',
-          'scipy',
+          'statsmodels',
           'patsy', # statsmodels dependency
-          'statsmodels'
+          'pandas',
+          'scipy',
+          'numpy',
           ],
     ext_modules=[
         Extension('eddlib.read_bam',
