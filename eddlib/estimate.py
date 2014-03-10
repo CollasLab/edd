@@ -18,10 +18,10 @@ def corrcoeff(odf):
                            right=odf.score[1:].values)).dropna()
     return scipy.stats.spearmanr(df.left, df.right)[0]
     
-def bin_size(orig_exp, nib_lim=0.01, max_ci_diff=0.25, min_corcoef=0.3):
+def bin_size(orig_exp, ci_method, nib_lim=0.01, max_ci_diff=0.25, min_corcoef=0.3):
     for bin_size in itertools.count(1):
         exp = orig_exp.aggregate_bins(times_bin_size=bin_size)
-        df = logit.ci_for_df(exp.as_data_frame(), ci_min=max_ci_diff)
+        df = logit.ci_for_df(exp.as_data_frame(), ci_method, ci_min=max_ci_diff)
         ratio_nib = logit.get_nib_ratio(df)
         pvar = corrcoeff(df)
         log.notice('testing bin size %d, nib ratio: %.4f, spearmanr: %.3f' % (bin_size, ratio_nib, pvar))
@@ -38,15 +38,15 @@ def golden_section_search(f, left, mid, right, precision):
             return (l + r)/2.0
         # Create a new possible center, in the area between c and b, pushed against c
         mr = m + resphi*(r - m)
-        log.notice('searching [l=%.2f, m=%.2f, mr=%.2f, r=%.2f]' % (l, m, mr, r))
+        # log.notice('searching [l=%.2f, m=%.2f, mr=%.2f, r=%.2f]' % (l, m, mr, r))
         mr_res = f(mr)
         m_res = f(m)
 
         if f(mr) > f(m):
-            log.notice('f(mr)=%.2f > f(m)=%.2f -> g(m, mr, r)' % (mr_res, m_res))
+            #log.notice('f(mr)=%.2f > f(m)=%.2f -> g(m, mr, r)' % (mr_res, m_res))
             return g(m, mr, r)
         else:
-            log.notice('f(mr)=%.2f <= f(m)=%.2f -> g(mr, m, l)' % (mr_res, m_res))
+            #log.notice('f(mr)=%.2f <= f(m)=%.2f -> g(mr, m, l)' % (mr_res, m_res))
             return g(mr, m, l)
     return g(left, mid, right)
 

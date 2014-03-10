@@ -125,11 +125,14 @@ class Experiment(object):
 class BamLoader(object):
 
     def __init__(self, chrom_size_path, bin_size, neg_score_scale,
-                 number_of_processes=4):
+                 ci_lim=0.25, ci_method='agresti_coull', nib_lim=0.01, number_of_processes=4):
         self.chrom_size_path = chrom_size_path
         self.bin_size = bin_size
         self.neg_score_scale = neg_score_scale
         self.bin_size = bin_size
+        self.ci_lim = ci_lim
+        self.ci_method = ci_method
+        self.nib_lim = nib_lim
         self.number_of_processes = number_of_processes
 
     def load_bam(self, ip_name, ctrl_name):
@@ -148,13 +151,23 @@ class BamLoader(object):
     def __load_experiment(self, ip_name, ctrl_name):
         exp = self.load_bam(ip_name, ctrl_name)
         if self.bin_size is None:
-            self.bin_size = estimate.bin_size(exp)
+            self.bin_size = estimate.bin_size(exp, self.ci_method,
+                                              max_ci_diff=self.ci_lim,
+                                              nib_lim=self.nib_lim)
             log.notice('Optimal bin size: %d' % self.bin_size)
         else:
             log.notice('Using preset bin size for %s and %s: %d' % (
                 ip_name, ctrl_name, self.bin_size))
         odf = exp.aggregate_bins(new_bin_size=self.bin_size).as_data_frame()
-        return logit.ci_for_df(odf)
+        df = logit.ci_for_df(odf, self.ci_method, ci_min=self.ci_lim)
+        ratio_nib = logit.get_nib_ratio(df)
+        log.notice('''Manually specified bin size of %dKB gives %.2f%% informative bins. \
+The required amount is %.2f%%.''' % (self.bin_size / 1000, (1-ratio_nib)*100, (1-self.nib_lim)*100))
+        assert ratio_nib < self.nib_lim, '''\
+The selected bin size results in less informative bins that what specified by the\
+parameter required_fraction_of_informative_bins. Please try a bigger bin size or let \
+EDD auto-estimate a bin size for you. Please consult the EDD manual for more information''' 
+        return df
         
     def load_single_experiment(self, ip_name, ctrl_name):
         self.df = self.__load_experiment(ip_name, ctrl_name)

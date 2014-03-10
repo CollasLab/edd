@@ -5,13 +5,17 @@ import os
 from logbook import Logger, FileHandler
 import eddlib
 import eddlib.experiment
+import eddlib.load_params
+
+
+
 from eddlib.algorithm.max_segments import GenomeBins, IntervalTest
 from eddlib.algorithm.monte_carlo import MonteCarlo
     
 log = Logger('edd')
 
 
-def log_parameters(args, argv):
+def log_parameters(args, argv, config):
     import datetime
     log.notice(str(datetime.datetime.now()))
     log.notice('cwd: %s' % os.getcwd())
@@ -36,14 +40,19 @@ def log_parameters(args, argv):
         log.notice('replicate experiment: \n\tip: %s\n\tctrl: %s' % tuple(args.replicate))
     assert os.path.isfile(args.ip_bam)
     assert os.path.isfile(args.input_bam)
+    log.notice('EDD configuration file parameters:')
+    for k, v in config.items():
+        log.notice('\t%s:%s' % (k, v))
 
-def main(args):
+def main(args, config):
     output_name = os.path.basename(args.output_dir.rstrip('/'))
     output_file = os.path.join(args.output_dir, output_name + '_peaks.bed')
     ratio_file = os.path.join(args.output_dir, output_name + '_bin_score.bedgraph')
     bin_size = args.bin_size * 1000 if args.bin_size is not None else None
     
     loader = eddlib.experiment.BamLoader(args.chrom_size.name, bin_size, args.gap_penalty,
+                                         ci_method=config['ci_method'], ci_lim=config['ci_lim'],
+                                         nib_lim=1-config['fraq_ibins'],
                                          number_of_processes=args.nprocs)
     loader.load_single_experiment(args.ip_bam, args.input_bam)
     df = loader.get_df(args.unalignable_regions.name)
@@ -93,6 +102,9 @@ Adjusts how sensitive EDD is to heterogeneity within domains. \
 Depends on Signal/Noise ratio of source files and on the interests of the researcher. \
 A "low" value favors large enriched domains with more heterogeneity. \
 A "high" value favors smaller enriched domains devoid of heterogeneity.''')
+    parser.add_argument('--config-file', type=argparse.FileType('r'), help='''\
+Path to user specified EDD configuration file. See EDD manual section about \
+configuration for more information.''')
     args = parser.parse_args(sys.argv[1:])
     # these imports take time to load due to rpy2
     # so we only load these if we actually run the program
@@ -103,6 +115,7 @@ A "high" value favors smaller enriched domains devoid of heterogeneity.''')
     log_handler = FileHandler(log_file, level='NOTICE', bubble=True, mode='w')
 
     with log_handler.applicationbound():
-        log_parameters(args, sys.argv)
-        main(args)
+        config = eddlib.load_params.load_parameters(non_default_config_file=args.config_file)
+        log_parameters(args, sys.argv, config)
+        main(args, config)
 

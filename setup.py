@@ -37,6 +37,7 @@ setup(name='edd',
       scripts=[
           'bin/edd',
           'bin/edd-multi-beta',
+          'bin/edd-extra-files-test',
           ],
       install_requires=[
           'numpy',

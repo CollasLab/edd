@@ -57,12 +57,17 @@ edd [-h] [--bin-size BIN_SIZE] [-n NUM_TRIALS] [-p NPROCS] [--fdr FDR] [-g GAP_P
  * e.g. set this to 32 if you have 32 cores as this will reduce the running time.
 * --fdr, by default 0.05
  * Significance threshold for peak calling
-* -s --negative-score-scale, by default 6
+* -g --gap-penalty
+ * Auto estimated if no value is specified
  * Adjusts how sensitive EDD is to heterogeneity within domains. 
  * Depends on Signal/Noise ratio of source files and on the interests of the researcher. 
   * A lower value favors large enriched domains with more heterogeneity. 
   * A higher value favors smaller enriched domains devoid of heterogeneity.
-  * More information and examples can be found in the *Additional* section below.
+  * More information and examples can be found in the *Additional*
+    section below.
+* --config-file
+ * Path to user specified EDD configuration file
+ * Please see section on *Configuring EDD* below.
 
 ## Output Files
 EDD creates three files in the output directory. 
@@ -70,8 +75,23 @@ EDD creates three files in the output directory.
 * A log file describing input files, parameters and runtime data
 * A bedgraph file with binscores
 
-The peaks should always be compared against the bedgraph file in a genome browser. See the *Selecting a negative score scale parameter* example in the *Additional* section below.
+The peaks should always be compared against the bedgraph file in a
+genome browser. See the *Selecting a negative score scale parameter*
+example in the *Additional* section below.
 
+## Configuring EDD
+In addition to required and optional run time parameters, EDD has some
+parameters where we think the default values will be preferable for
+most use cases. However, situations might arise where additional fine
+tuning might be required and we see no need to hide these parameters
+within the source code. 
+The parameters in the file
+[eddlib/default_parameters.conf](eddlib/default_parameters.conf) is
+read at startup unless another configuration file is given with the
+optional run time argument *--config-file*. To change these values,
+either edit the configuration file in the EDD source code directly, or
+make and edit a copy and supply the path to this copy with the
+*-config-file* argument.
 ## Additional
 
 ## Input Files
