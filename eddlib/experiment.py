@@ -144,8 +144,7 @@ class BamLoader(object):
                                               nib_lim=self.nib_lim)
             log.notice('Optimal bin size: %d' % self.bin_size)
         else:
-            log.notice('Using preset bin size for %s and %s: %d' % (
-                ip_name, ctrl_name, self.bin_size))
+            log.notice('Using preset bin size of: %d' % self.bin_size)
         odf = exp.aggregate_bins(new_bin_size=self.bin_size).as_data_frame()
         df = logit.ci_for_df(odf, self.ci_method, ci_min=self.ci_lim)
         ratio_nib = logit.get_nib_ratio(df)
