@@ -5,12 +5,10 @@ import math
 import os
 from logbook import Logger, FileHandler
 import numpy as np
+from pkg_resources import get_distribution
 import eddlib
 import eddlib.experiment
 import eddlib.load_params
-
-
-
 from eddlib.algorithm.max_segments import GenomeBins, IntervalTest
 from eddlib.algorithm.monte_carlo import MonteCarlo
     
@@ -128,6 +126,9 @@ configuration for more information.''')
                         help='Write log ratios to file.')
     parser.add_argument('--write-bin-scores', action='store_true',
                         help='Write bin scores to file.')
+    parser.add_argument('-v', '--version',  action='version',
+                        version='%%(prog)s %s' % get_distribution("edd").version,
+                        help="Print version and exit")
 
     args = parser.parse_args(sys.argv[1:])
     # these imports take time to load due to rpy2
