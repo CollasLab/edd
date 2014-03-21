@@ -83,6 +83,10 @@ class GapPenalty(object):
     def instantiate(cls, binscore_df, nprocs, gap_file, mc_trials, pval_lim):
         binscore_gb = GenomeBins.df_as_bins(binscore_df, gap_file)
         bedgraph_path = tempfile.mktemp()
+        # bin score file is saved because bedtool is used to find bins within peaks.
+        # bedtools intersect requires a file (or creates one from a string without cleaning up
+        # ideally I should use another library for this or implement the functionality myself.
+        # but this works and saves time, albeit ugly...
         util.save_bin_score_file(binscore_df, bedgraph_path)
         rval = cls(binscore_gb, bedgraph_path, nprocs, gap_file, mc_trials, pval_lim)
         return rval

@@ -14,6 +14,8 @@ def load_parameters(default_param_filename='default_parameters.conf',
     d['fraq_ibins'] = c.getfloat('EDD config', 'required_fraction_of_informative_bins')
     d['ci_method'] = c.get('EDD config', 'p_hat_ci_method')
     d['ci_lim'] = c.getfloat('EDD config', 'max_CI_value')
+    d['log_ratio_min_binsize'] = c.getint('EDD config',
+                                            'log_ratio_min_binsize') * 1000
     assert 0.0 <= d['fraq_ibins'] <= 1.0
     assert 0.0 <= d['ci_lim'] <= 1.0
     return d

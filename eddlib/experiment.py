@@ -4,7 +4,7 @@ The Experiment class reads bam files and from these raw data
 it's really easy to create a dataframe and normalize on those values.
 
 However, other parts of the code (maximum_segments) expects 
-an object per bin. Therefore, an utility function coverts 
+an object per bin. Therefore, a utility function coverts 
 a df to bin objects. 
 
 '''
@@ -112,16 +112,6 @@ class Experiment(object):
         else:
             return df
 
-    def write_ratios(self, ratio_file):
-        log.notice('writing log ratios to %s' % ratio_file)
-        df = self.as_data_frame(normalize=True)
-        df['ratio'] = np.log(df.ip / df.input).replace(
-                [np.inf, -np.inf], np.nan)
-        rdf = df.dropna()
-        rdf.to_csv(ratio_file, sep='\t', cols=['chrom', 'start', 'end', 'ratio'],
-                header=False, index=False)
-
-
 class BamLoader(object):
 
     def __init__(self, chrom_size_path, bin_size, neg_score_scale,
@@ -129,7 +119,6 @@ class BamLoader(object):
         self.chrom_size_path = chrom_size_path
         self.bin_size = bin_size
         self.neg_score_scale = neg_score_scale
-        self.bin_size = bin_size
         self.ci_lim = ci_lim
         self.ci_method = ci_method
         self.nib_lim = nib_lim
@@ -148,8 +137,7 @@ class BamLoader(object):
         common.score += r2.score
         return common
 
-    def __load_experiment(self, ip_name, ctrl_name):
-        exp = self.load_bam(ip_name, ctrl_name)
+    def __adjust_bin_size_and_get_df(self, exp):
         if self.bin_size is None:
             self.bin_size = estimate.bin_size(exp, self.ci_method,
                                               max_ci_diff=self.ci_lim,
@@ -170,14 +158,16 @@ EDD auto-estimate a bin size for you. Please consult the EDD manual for more inf
         return df
         
     def load_single_experiment(self, ip_name, ctrl_name):
-        self.df = self.__load_experiment(ip_name, ctrl_name)
+        self.exp = self.load_bam(ip_name, ctrl_name)
+        self.df = self.__adjust_bin_size_and_get_df(self.exp)
 
     def load_multiple_experiments(self, ip_names, ctrl_names, which_merge_method='median'):
         assert self.bin_size is not None
         assert len(ip_names) == len(ctrl_names)
         scores = []
         for ip_name, ctrl_name in zip(ip_names, ctrl_names):
-            x = self.__load_experiment(ip_name, ctrl_name)
+            exp = self.load_bam(ip_name, ctrl_name)
+            x = self.__adjust_bin_size_and_get_df(self.exp)
             scores.append(np.array(x.score))
         df = x['chrom start end'.split()].copy()
         scores = pa.DataFrame(np.array(scores).transpose())
@@ -211,4 +201,3 @@ EDD auto-estimate a bin size for you. Please consult the EDD manual for more inf
         
         df = logit.neg_score_scale(self.df, self.neg_score_scale)
         return logit.extrapolate_low_info_bins(df)
-
