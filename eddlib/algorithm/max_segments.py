@@ -4,7 +4,7 @@ import collections
 import itertools
 from eddlib import util 
 from chrom_max_segments import max_segments
-import gaps
+import unalignable_regions
 import logbook
 from rpy2.robjects.packages import importr
 
@@ -27,10 +27,10 @@ class GenomeBins(object):
                 for k, v in chrom_bins.items()}
 
     @classmethod
-    def with_gaps(cls, chrom_bins, gap_file):
-        if gap_file is not None:
-            g = gaps.read_gap_file(gap_file)
-            chrom_bins, _ = gaps.split_on_gaps(chrom_bins, g)
+    def with_unalignable_regions_masked(cls, chrom_bins, unalignable_regions_file):
+        if unalignable_regions_file is not None:
+            g = unalignable_regions.read_file(unalignable_regions_file)
+            chrom_bins, _ = unalignable_regions.split_on_regions(chrom_bins, g)
         return cls(chrom_bins)
 
     def max_segments(self, filter_trivial=0):
@@ -63,7 +63,7 @@ class GenomeBins(object):
             b = util.bed(x['chrom'], x['start'], x['end'],
                     x['score'])
             chromd[b.chrom].append(b)
-        return cls.with_gaps(chromd, gap_file)
+        return cls.with_unalignable_regions_masked(chromd, gap_file)
 
     def scale_neg_scores(self, scale):
         return GenomeBins(
