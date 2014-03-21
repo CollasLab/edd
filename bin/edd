@@ -6,11 +6,6 @@ import os
 from logbook import Logger, FileHandler
 import numpy as np
 from pkg_resources import get_distribution
-import eddlib
-import eddlib.experiment
-import eddlib.load_params
-from eddlib.algorithm.max_segments import GenomeBins, IntervalTest
-from eddlib.algorithm.monte_carlo import MonteCarlo
     
 log = Logger('edd')
 
@@ -133,7 +128,13 @@ configuration for more information.''')
     args = parser.parse_args(sys.argv[1:])
     # these imports take time to load due to rpy2
     # so we only load these if we actually run the program
-    # (opposed to -h)
+    # (opposed to --help and --version)
+    import eddlib
+    import eddlib.experiment
+    import eddlib.load_params
+    from eddlib.algorithm.max_segments import GenomeBins, IntervalTest
+    from eddlib.algorithm.monte_carlo import MonteCarlo
+
     if not os.path.isdir(args.output_dir):
         os.makedirs(args.output_dir)
     log_file = os.path.join(args.output_dir, 'log.txt')
