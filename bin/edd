@@ -44,7 +44,7 @@ def get_log_df(exp, aggregate_factor):
     odf = exp.aggregate_bins(times_bin_size=aggregate_factor).as_data_frame()
     df = odf['chrom start end'.split()]
     df['log_ratio'] = np.log(odf['ip'] / odf['input'].astype(float))
-    df.log_ratio.replace([np.inf, -np.inf], np.nan)
+    df.log_ratio.replace([np.inf, -np.inf], np.nan, inplace=True)
     return df
     
 def main(args, config):
