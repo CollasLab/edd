@@ -60,7 +60,7 @@ def main(args, config):
     loader.load_single_experiment(args.ip_bam, args.input_bam)
     if args.write_log_ratios:
         exp = loader.exp
-        aggregate_factor = int(math.ceil(config['log_ratio_min_binsize'] / float(exp.bin_size)))
+        aggregate_factor = int(math.ceil(config['log_ratio_bin_size'] / float(exp.bin_size)))
         logdf = get_log_df(exp, aggregate_factor)
         log_file_postfix = '_log_ratio_%dKB.bedgraph' % ((exp.bin_size * aggregate_factor) / 1000)
         log_ratio_file = os.path.join(args.output_dir,

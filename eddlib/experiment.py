@@ -126,7 +126,7 @@ class BamLoader(object):
 
     def load_bam(self, ip_name, ctrl_name):
         return Experiment.load_experiment(self.chrom_size_path, ip_name,
-                ctrl_name, 1000 if self.bin_size is None else self.bin_size, 
+                ctrl_name, 1000, # if self.bin_size is None else self.bin_size, 
                 use_multiprocessing=True)
 
     def __add_bin_scores(self, r1, r2):
