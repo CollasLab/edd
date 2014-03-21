@@ -7,7 +7,7 @@ import pybedtools
 
 log = logbook.Logger(__name__)
 
-class Gap(object):
+class UnalignableRegions(object):
 
     def __init__(self, chrom, start, end):
         self.chrom = chrom
@@ -28,29 +28,29 @@ class Gap(object):
                 self.start < x.end <= self.end)
 
     def __repr__(self):
-        return 'Gap(%s, %d, %d)' % (self.chrom, self.start, self.end)
+        return 'UnalignableRegions(%s, %d, %d)' % (self.chrom, self.start, self.end)
 
-def read_gap_file(path):
+def read_file(path):
     res = []
     for e in pybedtools.BedTool(path).merge():
-        x = Gap(e.chrom, e.start, e.end)
+        x = UnalignableRegions(e.chrom, e.start, e.end)
         res.append(x)
     tot = sum(x.end - x.start for x in res)
-    log.notice('Gap file read. Got %d gaps. Total coverage: %.2fMB' % (
+    log.notice('Unalignable regions file read. Got %d regions. Total coverage: %.2fMB' % (
         len(res) ,tot / 1e6))
     return res
 
-def split_on_gaps(scores_per_chrom, gaps):
+def split_on_regions(scores_per_chrom, regions):
     dg = collections.defaultdict(list)
     revdict = {}
     d = {}
-    for g in gaps:
+    for g in regions:
         dg[g.chrom].append(g)
 
-    for chrom, gaps in dg.items():
+    for chrom, regions in dg.items():
         if not chrom in scores_per_chrom:
             continue
-        gaps.sort(key=operator.attrgetter('start'))
+        regions.sort(key=operator.attrgetter('start'))
         groups = []
         cur_grp = []
         cur_gap = 0
@@ -59,9 +59,9 @@ def split_on_gaps(scores_per_chrom, gaps):
         try:
             while True:
                 x = bins.next()
-                if gaps[cur_gap].bigger_than(x):
+                if regions[cur_gap].bigger_than(x):
                     cur_grp.append(x)
-                elif gaps[cur_gap].overlaps(x):
+                elif regions[cur_gap].overlaps(x):
                     if len(cur_grp) > 0:
                         groups.append(cur_grp)
                         cur_grp = []
@@ -69,10 +69,10 @@ def split_on_gaps(scores_per_chrom, gaps):
                 else:
                     cur_gap += 1
                     cur_grp.append(x)
-                    if len(gaps) == cur_gap:
+                    if len(regions) == cur_gap:
                         cur_grp.extend(bins)
                         break
-                    assert not gaps[cur_gap].overlaps(x)
+                    assert not regions[cur_gap].overlaps(x)
         except StopIteration:
             pass
         if len(cur_grp) > 0:
@@ -84,12 +84,3 @@ def split_on_gaps(scores_per_chrom, gaps):
     for chrom in (scores_per_chrom.viewkeys() - dg.viewkeys()):
         d[chrom] = scores_per_chrom[chrom]
     return d, revdict
-
-def join_gaps(res, gapped_chroms_to_chrom):
-    d = collections.defaultdict(list)
-    for k, xs in res.items():
-        d[gapped_chroms_to_chrom.get(k, k)].extend(xs)
-    for xs in d.values():
-        xs.sort(key=operator.attrgetter('start'))
-    return d
-

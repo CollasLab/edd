@@ -110,9 +110,15 @@ class GapPenalty(object):
         peaks = BedTool(peaks_sb.getvalue(), from_string=True)
         d = self.count_stats(self.bins_bedtool.intersect(peaks))
         d['gap-penalty'] = gap_penalty
-        d['peak_EIB_ratio'] = d['EIB'] / float(d['EIB'] + d['DIB'])
+        try:
+            d['peak_EIB_ratio'] = d['EIB'] / float(d['EIB'] + d['DIB'])
+        except ZeroDivisionError:
+            # no peaks found
+            d['peak_EIB_ratio'] = 0.0
         d['global_EIB_coverage'] = d['EIB'] / float(self.genome_wide_stats['EIB'])
         d['score'] = d['peak_EIB_ratio']**5 * d['global_EIB_coverage']
-        log.notice('Gap penalty of %.2f gives a score of %.3f' % (gap_penalty, d['score']))
+        peak_cov = sum(x.end - x.start for x in peaks) / 1e6
+        log.notice('''Gap penalty of %.2f gives a score of %.3f \
+        (%d potential peaks with %.2fMB coverage)''' % (gap_penalty, d['score'], peaks.count(), peak_cov))
         self.__cache[gap_penalty] = d
         return d['score']
