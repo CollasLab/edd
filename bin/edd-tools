@@ -4,6 +4,7 @@ import argparse
 
 def compute_log_ratio(args):
     import numpy as np
+    import gzip
     import eddlib
     import eddlib.experiment
 
@@ -16,8 +17,12 @@ def compute_log_ratio(args):
     df = exp.as_data_frame()
     df['log_ratio'] = np.log(df.ip / df.input.astype(float))
     df['log_ratio'] = df.log_ratio.replace([np.inf, -np.inf], np.nan)
+    if args.gzip:
+        f = gzip.open(args.output_file.name, 'wb')
+    else:
+        f = args.output_file
     df['chrom start end log_ratio'.split()].to_csv(
-        args.output_file.name, sep='\t', index=False, header=False)
+        f, sep='\t', index=False, header=False)
     print 'log ratios written to %s.' % args.output_file.name
 
 if __name__ == '__main__':
@@ -38,6 +43,7 @@ The first column contains chromosome names and the second contains the chromosom
     
     lr.add_argument('--bin-size', type=int, default=10,
                     help='Bin size in KB. Default value: 10 (KB)')
+    lr.add_argument('--gzip', action='store_true', help='gzip output')
     lr.set_defaults(func=compute_log_ratio)
     args = p.parse_args(sys.argv[1:])
     args.func(args)
