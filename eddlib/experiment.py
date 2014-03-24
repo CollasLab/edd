@@ -11,12 +11,11 @@ a df to bin objects.
 import functools
 import collections
 import numpy as np
-import logit
+
 from logbook import Logger
 import pandas as pa
 import read_bam
-
-
+import logit
 import estimate
 
 log = Logger(__name__)

@@ -36,6 +36,7 @@ setup(name='edd',
                 'eddlib.algorithm'],
       scripts=[
           'bin/edd',
+          'bin/edd-tools',
           ],
       install_requires=[
           'Logbook',
