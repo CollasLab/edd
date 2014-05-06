@@ -34,7 +34,9 @@ setup(name='edd',
       author_email='e.g.lund@medisin.uio.no',
       packages=['eddlib',
                 'eddlib.algorithm'],
-      data_files=[('eddlib', ['eddlib/default_parameters.conf'])],
+      # installs into root dir (not what i want)
+      #data_files=[('eddlib', ['eddlib/default_parameters.conf'])],
+      package_data={'': ['*.conf']},
       scripts=[
           'bin/edd',
         #'bin/edd-tools',
