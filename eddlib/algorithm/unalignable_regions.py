@@ -1,6 +1,6 @@
 import collections
 import operator
-
+import os
 import logbook
 import pybedtools
 
@@ -32,9 +32,12 @@ class UnalignableRegions(object):
 
 def read_file(path):
     res = []
-    for e in pybedtools.BedTool(path).merge():
-        x = UnalignableRegions(e.chrom, e.start, e.end)
-        res.append(x)
+    if os.stat(path).st_size > 0:
+        for e in pybedtools.BedTool(path).sort().merge():
+            x = UnalignableRegions(e.chrom, e.start, e.end)
+            res.append(x)
+    else:
+        log.notice('unalignable regions file is empty, skipping.')
     tot = sum(x.end - x.start for x in res)
     log.notice('Unalignable regions file read. Got %d regions. Total coverage: %.2fMB' % (
         len(res) ,tot / 1e6))
@@ -68,11 +71,12 @@ def split_on_regions(scores_per_chrom, regions):
                     ndropped += 1
                 else:
                     cur_gap += 1
-                    cur_grp.append(x)
                     if len(regions) == cur_gap:
+                        cur_grp.append(x)
                         cur_grp.extend(bins)
                         break
-                    assert not regions[cur_gap].overlaps(x)
+                    if not regions[cur_gap].overlaps(x):
+                        cur_grp.append(x)
         except StopIteration:
             pass
         if len(cur_grp) > 0:

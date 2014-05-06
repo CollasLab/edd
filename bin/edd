@@ -70,7 +70,7 @@ def main(args, config):
 
     if args.write_bin_scores:
         eddlib.util.save_bin_score_file(df, ratio_file)
-    gb = GenomeBins.df_as_bins(df, args.unalignable_regions)
+    gb = GenomeBins.df_as_bins(df, args.unalignable_regions.name)
     max_bin_score = df.score.max()
     observed_result = gb.max_segments(filter_trivial=max_bin_score)
     log.notice('Running %d monte carlo trials' % args.num_trials)

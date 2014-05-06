@@ -2,9 +2,7 @@ import numpy as np
 from chrom_max_segments import maximum_segment
 from bisect import bisect_left
 import multiprocessing
-
-from rpy2.robjects.packages import importr
-stats = importr('stats')
+from statsmodels.sandbox.stats.multicomp import multipletests
 
 class MonteCarlo(object):
     """
@@ -70,6 +68,6 @@ def fdr_qvals(obs, mc):
     obs = np.sort(obs)[::-1]
     mc = np.sort(mc)
     pvals = list(compute_pvalues(obs, mc))
-    qvals = list(stats.p_adjust(pvals, method='fdr'))
+    qvals = list(multipletests(pvals, method='fdr_bh')[1])
     return dict(pvals=pvals, qvals=qvals)
 
