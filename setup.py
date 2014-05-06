@@ -27,13 +27,14 @@ except ImportError:
     raise Exception('please install cython first, e.g.: pip install --upgrade cython')
 
 setup(name='edd',
-      version='1.1.1',
+      version='1.1.2',
       description='Enriched domain detector for ChIP-seq data',
       url='http://github.com/CollasLab/edd',
       author='Eivind G. Lund',
       author_email='e.g.lund@medisin.uio.no',
       packages=['eddlib',
                 'eddlib.algorithm'],
+      data_files=[('eddlib', ['eddlib/default_parameters.conf'])],
       scripts=[
           'bin/edd',
         #'bin/edd-tools',
