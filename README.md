@@ -10,9 +10,7 @@ The most CPU intensive parts of the algorithm have been written in Cython, which
 pip install Cython numpy pysam
 ```
 
-EDD also requires **R** to be installed.
-
-Although EDD has explicitly listed dependencies that *setuptools* will try to resolve, we have encountered problems with the order that these dependencies are installed in. To work around this problem (which is not an EDD bug), install the following EDD dependencies prior to installing EDD:
+Although EDD has explicitly listed dependencies that *setuptools* will try to resolve, we have encountered problems with the order that these dependencies are installed in. To work around this problem, install the following EDD dependencies prior to installing EDD:
 
 ```bash
 pip install scipy
