@@ -6,9 +6,8 @@ from eddlib import util
 from chrom_max_segments import max_segments
 import unalignable_regions
 import logbook
-from rpy2.robjects.packages import importr
+from statsmodels.sandbox.stats.multicomp import multipletests
 
-stats = importr('stats')
 log = logbook.Logger(__name__)
 
 class GenomeBins(object):
@@ -96,7 +95,7 @@ class IntervalTest(object):
         if not self._pvalues:
             self.pvalues()
         pvals = [x[1] for x in self._pvalues]
-        qvals = list(stats.p_adjust(pvals, method='fdr'))
+        qvals = list(multipletests(pvals, method='fdr_bh')[1])
         res = [(q,p,x) for (q, (x,p)) in zip(qvals, self._pvalues)
             if q < below]
         self._qvalues = res
