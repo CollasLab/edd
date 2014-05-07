@@ -150,6 +150,6 @@ a higher gap penalty value due to less noise and therefore less heterogeneity.
 Even though auto-estimation has worked well for the data sets we have analyzed to date, resulting peaks should nevertheless be checked in a genome browser along with the bin score file that is created from each analysis. If the estimated parameter appears non optimal (see *Understanding the gap penalty parameter* above), then we recommend re-running the analysis with the gap penalty parameter set manually. The log file will indicate what the estimated gap penalty was, which can be used as a starting point.
 ### Tested Operating Systems
 * Red Hat Enterprise Linux 6
-* Fedora 19
+* Fedora 20
 * Ubuntu 14.04 LTS
 * OS X 10.9.1
