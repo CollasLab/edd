@@ -19,6 +19,8 @@ pip install patsy
 pip install statsmodels
 ```
 
+EDD currently uses the pybedtools library that again requires that [bedtools](https://github.com/arq5x/bedtools2) program to be installed and on the path. See the bedtools documentation for installation instructions](http://bedtools.readthedocs.org/en/latest/content/installation.html)
+
 ## Installation
 
 The latest stable version of EDD can be installed using pip
