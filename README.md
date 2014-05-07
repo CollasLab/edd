@@ -151,4 +151,5 @@ Even though auto-estimation has worked well for the data sets we have analyzed t
 ### Tested Operating Systems
 * Red Hat Enterprise Linux 6
 * Fedora 19
+* Ubuntu 14.04 LTS
 * OS X 10.9.1
