@@ -39,8 +39,6 @@ def golden_section_search(f, left, mid, right, precision):
         # Create a new possible center, in the area between c and b, pushed against c
         mr = m + resphi*(r - m)
         # log.notice('searching [l=%.2f, m=%.2f, mr=%.2f, r=%.2f]' % (l, m, mr, r))
-        mr_res = f(mr)
-        m_res = f(m)
 
         if f(mr) > f(m):
             #log.notice('f(mr)=%.2f > f(m)=%.2f -> g(m, mr, r)' % (mr_res, m_res))
