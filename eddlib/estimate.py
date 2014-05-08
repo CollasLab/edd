@@ -55,6 +55,7 @@ class GapPenalty(object):
 
     def __init__(self, orig_bins, bedgraph_path, nprocs, gap_file,
                  mc_trials, pval_lim):
+        assert os.stat(bedgraph_path).st_size > 0
         self.orig_bins = orig_bins
         self.bedgraph_path = bedgraph_path
         self.bins_bedtool = BedTool(self.bedgraph_path)
@@ -108,6 +109,12 @@ class GapPenalty(object):
         tester = IntervalTest(observed_result, mc_res)
         segments = [segment for (segment, pval) in tester.pvalues()
                     if pval < self.pval_lim]
+        if len(segments) == 0:
+            # no potential peaks found
+            log.notice('''Gap penalty of %.2f gives a score of 0.0 \
+            (0 potential peaks with 0.00MB coverage)''' % gap_penalty)
+            self.__cache[gap_penalty] = {'score': 0.00}
+            return 0.0
         # TODO use bx.python instead of pybedtools
         peaks_sb = StringIO.StringIO()
         tester.segments_to_bedstream(segments, peaks_sb)
