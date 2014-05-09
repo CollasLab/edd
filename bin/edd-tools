@@ -21,7 +21,11 @@ def compute_log_ratio(args):
         f = gzip.open(args.output_file.name, 'wb')
     else:
         f = args.output_file
-    df['chrom start end log_ratio'.split()].to_csv(
+    if args.save_counts:
+        colnames = 'chrom start end log_ratio ip input'.split()
+    else:
+        colnames = 'chrom start end log_ratio'.split()
+    df[colnames].to_csv(
         f, sep='\t', index=False, header=False)
     print 'log ratios written to %s.' % args.output_file.name
 
@@ -44,6 +48,7 @@ The first column contains chromosome names and the second contains the chromosom
     lr.add_argument('--bin-size', type=int, default=10,
                     help='Bin size in KB. Default value: 10 (KB)')
     lr.add_argument('--gzip', action='store_true', help='gzip output')
+    lr.add_argument('--save-counts', action='store_true')
     lr.set_defaults(func=compute_log_ratio)
     args = p.parse_args(sys.argv[1:])
     args.func(args)

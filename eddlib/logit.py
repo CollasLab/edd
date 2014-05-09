@@ -21,7 +21,8 @@ def ci_for_df(odf, ci_method, ci_min=0.25):
     df['ci_low'], df['ci_high'] = proportion_confint(df.ip, df.tot_reads,
                                                      method=ci_method)
     df['ci_diff'] = df.ci_high - df.ci_low
-    small_CI = df.ci_diff < ci_min
+    has_ip_and_ctr_reads = np.logical_and(df.ip > 0, df.input > 0)
+    small_CI = np.logical_and(df.ci_diff < ci_min, has_ip_and_ctr_reads)
     df['score'] = logit(df.ix[small_CI].avg)
     return df
 
