@@ -5,7 +5,7 @@ it's really easy to create a dataframe and normalize on those values.
 
 However, other parts of the code (maximum_segments) expects 
 an object per bin. Therefore, a utility function coverts 
-a df to bin objects. 
+a data frame to bin objects. 
 
 '''
 import functools
