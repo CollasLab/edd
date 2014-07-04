@@ -1,6 +1,6 @@
 # EDD - Enriched Domain Detector
 
-EDD is a ChIP-seq peak caller for detection of megabase domains of enrichment. 
+[EDD](http://nar.oxfordjournals.org/content/42/11/e92) is a ChIP-seq peak caller for detection of megabase domains of enrichment. 
 
 ## Installation Requirements
 At the moment, EDD only supports **Python 2.7**. Please contact us if this is a problem for you.
