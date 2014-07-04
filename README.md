@@ -38,7 +38,7 @@ python setup.py install
 ## Usage
 All the required and optional arguments to EDD are listed here and further explained below
 ```
-edd [-h] [--bin-size BIN_SIZE] [-n NUM_TRIALS] [-p NPROCS] [--fdr FDR] [-g GAP_PENALTY] chrom_size unalignable_regions ip_bam control_bam output_dir
+edd [-h] [--bin-size BIN_SIZE] [-n NUM_TRIALS] [-p NPROCS] [--fdr FDR] [-g GAP_PENALTY] [--config-file CONFIG_FILE] [--write-log-ratios] [--write-bin-scores] [-v]
 ```
 ### Required Arguments
 * **chrom_size**:
@@ -77,12 +77,17 @@ edd [-h] [--bin-size BIN_SIZE] [-n NUM_TRIALS] [-p NPROCS] [--fdr FDR] [-g GAP_P
 * --config-file
  * Path to user specified EDD configuration file
  * Please see section on *Configuring EDD* below.
+* --write-log-ratios
+  * Write log ratios as a bedgraph file in the output folder
+* --write-bin-scores
+  * Write bin scores as a bedgraph file in the output folder
 
 ## Output Files
 EDD creates three files in the output directory. 
 * A bed file with peaks
 * A log file describing input files, parameters and runtime data
-* A bedgraph file with binscores
+* A bedgraph file with binscores (optional, see --write-bin-scores)
+* A bedgraph file with log ratios (optional, see --write-log-ratios)
 
 The peaks should always be compared against the bedgraph file in a
 genome browser. See the *Selecting a negative score scale parameter*
