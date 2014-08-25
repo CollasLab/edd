@@ -4,7 +4,7 @@ from distutils.extension import Extension
 
 if not sys.version_info[:2] == (2, 7):
     raise Exception('''\
-    Edd requires python version 2.7.x, but you are using %d.%d.%d''' % 
+    Edd requires python version 2.7.x, but you are using %d.%d.%d''' %
     sys.version_info[:3])
 
 try:
@@ -27,7 +27,7 @@ except ImportError:
     raise Exception('please install cython first, e.g.: pip install --upgrade cython')
 
 setup(name='edd',
-      version='1.1.7',
+      version='1.1.8',
       description='Enriched domain detector for ChIP-seq data',
       url='http://github.com/CollasLab/edd',
       author='Eivind G. Lund',
