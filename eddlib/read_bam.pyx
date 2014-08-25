@@ -1,7 +1,9 @@
 from libc.stdlib cimport calloc, free
 import numpy as np
 cimport numpy as np
-cimport pysam.csamtools as csam
+from pysam.chtslib cimport bam1_t, bam1_core_t
+from pysam.csamfile cimport Samfile
+
 
 cdef np.ndarray[np.float64_t] \
     agg_n(np.ndarray[np.float64_t] xs, int n):
@@ -33,13 +35,13 @@ cdef class BamCounter:
     object chrom_sizes
     public object chrom_bins
     double **cb
-    size_t cb_len 
+    size_t cb_len
     size_t *cnbins
-    csam.Samfile fp 
+    Samfile fp
     size_t bin_size
 
   def __cinit__(self, chrom_sizes, bam_filename, bin_size):
-    self.fp = csam.Samfile(bam_filename)
+    self.fp = Samfile(bam_filename)
     self.cb_len = self.fp.nreferences
     self.cb = <double**> calloc(self.cb_len, sizeof(double*));
     self.cnbins = <size_t*> calloc(self.cb_len, sizeof(size_t))
@@ -52,7 +54,7 @@ cdef class BamCounter:
 
     # add array bin pointers to fast lookup array
     for i in range(self.cb_len):
-      chrom_name = self.fp.getrname(i) 
+      chrom_name = self.fp.getrname(i)
       if not chrom_name in self.chrom_sizes:
         self.cb[i] = NULL
         self.cnbins[i] = 0
@@ -68,15 +70,15 @@ cdef class BamCounter:
 
   def process_bam(self):
     cdef:
-      csam.bam1_t *b
+      bam1_t *b
       size_t start, cov, sidx
       size_t nreads = 0
       size_t start_to_bin_end
-      double r 
+      double r
     while self.fp.cnext() >= 0:
       b = self.fp.getCurrent()
-      if (b.core.flag & 0x4 or 
-          self.cb[b.core.tid] == NULL or 
+      if (b.core.flag & 0x4 or
+          self.cb[b.core.tid] == NULL or
           b.core.pos == 0):
         continue
       nreads += 1
