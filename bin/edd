@@ -6,7 +6,7 @@ import os
 from logbook import Logger, FileHandler
 import numpy as np
 from pkg_resources import get_distribution
-    
+
 log = Logger('edd')
 
 
@@ -33,8 +33,8 @@ def log_parameters(args, argv, config):
     log.notice('unalignable regions file  : %s' % args.unalignable_regions.name)
     if False: # no replicate atm args.replicate:
         log.notice('replicate experiment: \n\tip: %s\n\tctrl: %s' % tuple(args.replicate))
-    assert os.path.isfile(args.ip_bam)
-    assert os.path.isfile(args.input_bam)
+    assert os.path.isfile(args.ip_bam), "IP file not found: %s" % args.ip_bam
+    assert os.path.isfile(args.input_bam), "Input file not found: %s" % args.input_bam
     log.notice('Writing log ratios: %s' % args.write_log_ratios)
     log.notice('EDD configuration file parameters:')
     for k, v in config.items():
@@ -46,13 +46,13 @@ def get_log_df(exp, aggregate_factor):
     df['log_ratio'] = np.log(odf['ip'] / odf['input'].astype(float))
     df.log_ratio.replace([np.inf, -np.inf], np.nan, inplace=True)
     return df
-    
+
 def main(args, config):
     output_name = os.path.basename(args.output_dir.rstrip('/'))
     output_file = os.path.join(args.output_dir, output_name + '_peaks.bed')
     ratio_file = os.path.join(args.output_dir, output_name + '_bin_score.bedgraph')
     bin_size = args.bin_size * 1000 if args.bin_size is not None else None
-    
+
     loader = eddlib.experiment.BamLoader(args.chrom_size.name, bin_size, args.gap_penalty,
                                          ci_method=config['ci_method'], ci_lim=config['ci_lim'],
                                          nib_lim=1-config['fraq_ibins'],
@@ -74,7 +74,7 @@ def main(args, config):
     max_bin_score = df.score.max()
     observed_result = gb.max_segments(filter_trivial=max_bin_score)
     log.notice('Running %d monte carlo trials' % args.num_trials)
-    mc_res = MonteCarlo.run_simulation(gb.chrom_scores, 
+    mc_res = MonteCarlo.run_simulation(gb.chrom_scores,
             niter=args.num_trials, nprocs=args.nprocs)
     tester = IntervalTest(observed_result, mc_res)
     tester.qvalues(below=args.fdr)
@@ -99,7 +99,7 @@ The first column contains chromosome names and the second contains the chromosom
             An integer specifying the bin size in KB. \
             Will auto select bin size based on input data \
             if not specified.''')
-    # parser.add_argument('--replicate', nargs=2, 
+    # parser.add_argument('--replicate', nargs=2,
     # help='''must be ip.bam and ctrl.bam path for replicate experiment \
     #         to be merged.''')
     parser.add_argument('-n', '--num-trials', type=int, default=10000, help='''\
@@ -144,4 +144,3 @@ configuration for more information.''')
         config = eddlib.load_params.load_parameters(non_default_config_file=args.config_file)
         log_parameters(args, sys.argv, config)
         main(args, config)
-

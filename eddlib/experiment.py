@@ -3,9 +3,9 @@ this module has a somewhat strange flow.
 The Experiment class reads bam files and from these raw data
 it's really easy to create a dataframe and normalize on those values.
 
-However, other parts of the code (maximum_segments) expects 
-an object per bin. Therefore, a utility function coverts 
-a data frame to bin objects. 
+However, other parts of the code (maximum_segments) expects
+an object per bin. Therefore, a utility function coverts
+a data frame to bin objects.
 
 '''
 import functools
@@ -32,7 +32,7 @@ class Experiment(object):
     '''
 
     @classmethod
-    def load_experiment(cls, chromsizes_path, ip_bam_path, 
+    def load_experiment(cls, chromsizes_path, ip_bam_path,
             input_bam_path, bin_size=1000, use_multiprocessing=True):
         chromsizes = cls.read_chrom_sizes(chromsizes_path)
         f = functools.partial(read_bam.read_bam_into_bins,
@@ -101,10 +101,18 @@ class Experiment(object):
             d['ip'] = ip_cnts
             d['input'] = input_cnts
             return pa.DataFrame(d)
-        assert len(self.ipd) == len(self.inputd)
-        df = pa.concat([chrom_to_df(c, self.ipd[c], 
+        common_chroms = set()
+        common_chroms.update(self.ipd.keys())
+        common_chroms.update(self.inputd.keys())
+        for chrom in self.ipd.keys():
+            if not chrom in common_chroms:
+                log.warn('skipping chrom, IP chrom %s not present in Input.' % chrom)
+        for chrom in self.inputd.keys():
+            if not chrom in common_chroms:
+                log.warn('skipping chrom, Input chrom %s not present in IP.' % chrom)
+        df = pa.concat([chrom_to_df(c, self.ipd[c],
             self.inputd[c], self.bin_size)
-            for c in self.ipd],
+                        for c in common_chroms],
             ignore_index=True)
         if normalize:
             return self.normalize_df(df)
@@ -125,7 +133,7 @@ class BamLoader(object):
 
     def load_bam(self, ip_name, ctrl_name):
         return Experiment.load_experiment(self.chrom_size_path, ip_name,
-                ctrl_name, 1000, # if self.bin_size is None else self.bin_size, 
+                ctrl_name, 1000, # if self.bin_size is None else self.bin_size,
                 use_multiprocessing=True)
 
     def __add_bin_scores(self, r1, r2):
@@ -152,9 +160,9 @@ The required amount is %.2f%%.''' % (self.bin_size / 1000, (1-ratio_nib)*100, (1
         assert ratio_nib < self.nib_lim, '''\
 The selected bin size results in less informative bins that what specified by the\
 parameter required_fraction_of_informative_bins. Please try a bigger bin size or let \
-EDD auto-estimate a bin size for you. Please consult the EDD manual for more information''' 
+EDD auto-estimate a bin size for you. Please consult the EDD manual for more information'''
         return df
-        
+
     def load_single_experiment(self, ip_name, ctrl_name):
         self.exp = self.load_bam(ip_name, ctrl_name)
         self.df = self.__adjust_bin_size_and_get_df(self.exp)
@@ -196,6 +204,6 @@ EDD auto-estimate a bin size for you. Please consult the EDD manual for more inf
             self.neg_score_scale = gpe.search()
             gpe.cleanup()
             log.notice('Gap penalty estimated to %.1f' % self.neg_score_scale)
-        
+
         df = logit.neg_score_scale(self.df, self.neg_score_scale)
         return logit.extrapolate_low_info_bins(df)
