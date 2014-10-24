@@ -101,9 +101,7 @@ class Experiment(object):
             d['ip'] = ip_cnts
             d['input'] = input_cnts
             return pa.DataFrame(d)
-        common_chroms = set()
-        common_chroms.update(self.ipd.keys())
-        common_chroms.update(self.inputd.keys())
+        common_chroms = set(self.ipd.keys()).intersection(set(self.inputd.keys()))
         for chrom in self.ipd.keys():
             if not chrom in common_chroms:
                 log.warn('skipping chrom, IP chrom %s not present in Input.' % chrom)
@@ -173,7 +171,7 @@ EDD auto-estimate a bin size for you. Please consult the EDD manual for more inf
         scores = []
         for ip_name, ctrl_name in zip(ip_names, ctrl_names):
             exp = self.load_bam(ip_name, ctrl_name)
-            x = self.__adjust_bin_size_and_get_df(self.exp)
+            x = self.__adjust_bin_size_and_get_df(exp)
             scores.append(np.array(x.score))
         df = x['chrom start end'.split()].copy()
         scores = pa.DataFrame(np.array(scores).transpose())
@@ -189,7 +187,7 @@ EDD auto-estimate a bin size for you. Please consult the EDD manual for more inf
             norm_factors = sums / sums.min()
             df['score'] = (scores / norm_factors).sum(axis=1).values
         else:
-            raise ArgumentError('%s is an illegal value for argument `which_merge_method`' % which_merge_method)
+            raise Exception('%s is an illegal value for argument `which_merge_method`' % which_merge_method)
         self.df = df
 
     def get_df(self, unalignable_regions):
