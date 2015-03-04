@@ -16,7 +16,7 @@ e.g.: pip install --upgrade numpy''')
 
 try:
     import pysam
-    version, major, minor = pysam.__version__.split('.')
+    version, major, minor = pysam.__version__.split('.')[:3]
     if int(version) == 0 and int(major) < 8:
         raise Exception('''EDD requires pysam version 0.8.0 or greater, \
 but the installed version was %s. Please upgrade pysam.''' % pysam.__version)
@@ -32,7 +32,7 @@ except ImportError:
     raise Exception('please install cython first, e.g.: pip install --upgrade cython')
 
 setup(name='edd',
-      version='1.1.11',
+      version='1.1.12',
       description='Enriched domain detector for ChIP-seq data',
       url='http://github.com/CollasLab/edd',
       author='Eivind G. Lund',
