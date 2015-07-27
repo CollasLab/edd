@@ -90,11 +90,12 @@ cdef class BamCounter:
         assert(self.cnbins[b.core.tid] > sidx)
         self.cb[b.core.tid][sidx] += 1
       else:
-        assert(self.cnbins[b.core.tid] > (sidx + 1))
         # the sequence spans two bins
         r = start_to_bin_end / <double>b.core.l_qseq;
         self.cb[b.core.tid][sidx] += r
-        self.cb[b.core.tid][sidx + 1] += (1 - r)
+        if (self.cnbins[b.core.tid] > (sidx + 1)):
+          # only add to next bin if present (ok to drop if not)
+          self.cb[b.core.tid][sidx + 1] += (1 - r)
     return nreads;
 
   def __dealloc__(self):
