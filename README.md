@@ -158,3 +158,4 @@ Even though auto-estimation has worked well for the data sets we have analyzed t
 * Fedora 20
 * Ubuntu 14.04 LTS
 * OS X 10.9.1
+* [![Build Status](https://travis-ci.org/CollasLab/edd.svg?branch=master)](https://travis-ci.org/CollasLab/edd)
