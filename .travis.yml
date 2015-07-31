@@ -6,13 +6,17 @@ notifications:
 language: python
 python:
     - "2.7"
-install:
+virtualenv:
+  system_site_packages: true
+before_install:
     - sudo apt-get update -qq
-    - sudo apt-get install -y python2.7-dev
+    - sudo apt-get install -qq -y python2.7-dev
+    - sudo apt-get install -qq -y libblas-dev liblapack-dev gfortran 
+install:
     - sudo pip install numpy
     - sudo pip install cython
     - sudo pip install pysam
-    - sudo pip install scipy
+    - travis_wait sudo pip install scipy
     - sudo pip install pandas
     - sudo pip install patsy
     - sudo pip install statsmodels
