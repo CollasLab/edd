@@ -13,13 +13,15 @@ before_install:
     - sudo apt-get install -qq -y python2.7-dev
     - sudo apt-get install -qq -y libblas-dev liblapack-dev gfortran 
 install:
-    - sudo pip install numpy
-    - sudo pip install cython
-    - sudo pip install pysam
-    - travis_wait sudo pip install scipy
-    - sudo pip install pandas
-    - sudo pip install patsy
-    - sudo pip install statsmodels
+
+  - sudo pip install -q cython
+  - sudo pip install -q pybedtools
+  - sudo pip install -q numpy
+  - sudo pip install -q pysam
+  - travis_wait sudo pip install -q scipy
+  - sudo pip install -q pandas
+  - sudo pip install -q patsy
+  - sudo pip install -q statsmodels
 script:
     - sudo python2.7 setup.py install
     - "edd -h"
