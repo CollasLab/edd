@@ -81,4 +81,5 @@ def maximum_segment(np.ndarray[np.float64_t] xs):
     cur_score = buf[i].I
     if cur_score > max_score:
       max_score = cur_score
+  free(buf)
   return max_score
