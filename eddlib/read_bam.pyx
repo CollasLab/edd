@@ -1,8 +1,8 @@
 from libc.stdlib cimport calloc, free
 import numpy as np
 cimport numpy as np
-from pysam.chtslib cimport bam1_t, bam1_core_t
-from pysam.csamfile cimport Samfile
+from pysam.libchtslib cimport bam1_t, bam1_core_t
+from pysam.libcsamfile cimport Samfile
 
 
 cdef np.ndarray[np.float64_t] \
