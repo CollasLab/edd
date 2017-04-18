@@ -2,6 +2,12 @@ import os, sys
 from setuptools import setup
 from distutils.extension import Extension
 
+def get_version(m):
+    xs = m.__version__.split('.')
+    xs += ['0', '0']
+    version, major, minor = xs[:3]
+    return version, major, minor
+
 if not sys.version_info[:2] == (2, 7):
     raise Exception('''\
     Edd requires python version 2.7.x, but you are using %d.%d.%d''' %
@@ -16,7 +22,7 @@ e.g.: pip install --upgrade numpy''')
 
 try:
     import pysam
-    version, major, minor = pysam.__version__.split('.')[:3]
+    version, major, minor = get_version(pysam)
     if int(version) == 0 and int(major) < 10:
         sys.stderr.write('''\
 
@@ -39,7 +45,7 @@ except ImportError:
     raise Exception('please install cython first, e.g.: pip install --upgrade cython')
 
 setup(name='edd',
-      version='1.1.16',
+      version='1.1.17',
       description='Enriched domain detector for ChIP-seq data',
       url='http://github.com/CollasLab/edd',
       author='Eivind G. Lund',
