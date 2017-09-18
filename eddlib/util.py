@@ -7,8 +7,9 @@ bed = namedtuple('BedGraph', 'chrom start end score')
 bin = namedtuple('Bin', 'chrom start end ip_count input_count')
 
 def save_bin_score_file(df, ratio_file):
-    df['chrom start end score'.split()].sort(['chrom', 'start']).to_csv(
-        ratio_file, sep='\t', index=False, header=False)
+    columns = 'chrom start end score'.split()
+    x = df[columns].sort_values(by = ['chrom', 'start'])
+    x.to_csv(ratio_file, sep='\t', index=False, header=False)
 
 def ci_lower_bound(pos, neg):
     '''
