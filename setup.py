@@ -23,17 +23,19 @@ e.g.: pip install --upgrade numpy''')
 try:
     import pysam
     version, major, minor = get_version(pysam)
-    if int(version) == 0 and int(major) < 10:
+    too_old_pysam = int(version) == 0 and int(major) < 10
+    too_recent_pysam = int(version) != 0 or int(major) >= 12
+    if too_old_pysam or too_recent_pysam:
         sys.stderr.write('''\
 
         ###########
-        # WARNING #
+        #  ERROR  #
         ###########
-EDD requires pysam version 0.10.0 or greater, \
-but the detected version was %s.\
-The installation might not work.
-
+EDD is only compatible with pysam versions from 0.10.0 up to and including 0.11.2.2.
+The detected version was %s.
+Aborting ...
 ''' % pysam.__version__)
+        sys.exit(1)
 except ImportError:
     raise Exception('''\
 EDD has compile time dependencies on pysam. So please install pysam first.
@@ -45,7 +47,7 @@ except ImportError:
     raise Exception('please install cython first, e.g.: pip install --upgrade cython')
 
 setup(name='edd',
-      version='1.1.18',
+      version='1.1.19',
       description='Enriched domain detector for ChIP-seq data',
       url='http://github.com/CollasLab/edd',
       author='Eivind G. Lund',
@@ -68,6 +70,7 @@ setup(name='edd',
           'python-dateutil', # pandas dependency
           'scipy',
           'numpy',
+          'pysam>=0.10,<0.12',
           ],
     ext_modules=[
         Extension('eddlib.read_bam',

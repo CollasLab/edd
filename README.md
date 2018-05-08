@@ -3,21 +3,19 @@
 [EDD](http://nar.oxfordjournals.org/content/42/11/e92) is a ChIP-seq peak caller for detection of megabase domains of enrichment. 
 
 ## Installation Requirements
-At the moment, EDD only supports **Python 2.7**. Please contact us if this is a problem for you.
+At the moment, EDD only supports **Python 2.7**. 
 The most CPU intensive parts of the algorithm have been written in Cython, which will be translated into C and compiled during installation. A consequence of this is that EDD has compile time dependencies on the following python packages: Cython, numpy and pysam. So these packages must be installed prior to installing EDD.
 
-```bash
-pip install Cython numpy pysam
-```
-
-Although EDD has explicitly listed dependencies that *setuptools* will try to resolve, we have encountered problems with the order that these dependencies are installed in. To work around this problem, install the following EDD dependencies prior to installing EDD:
 
 ```bash
-pip install scipy
-pip install pandas
-pip install patsy
-pip install statsmodels
+pip install Cython numpy pysam=0.11
 ```
+
+Currently, as of May 2018, the most recent pysam versions are incompatible with EDD.
+Multiple other packages depends upon pysam. 
+It is therefore recommended to install EDD in a [python](http://docs.python-guide.org/en/latest/dev/virtualenvs/) 
+or [conda](https://conda.io/docs/user-guide/tasks/manage-environments.html) virtual environment.
+Another posibillity is to create a docker or singularity container with EDD.
 
 EDD currently uses the pybedtools library that again requires the [bedtools](https://github.com/arq5x/bedtools2) program to be installed and on the path. See the [bedtools documentation for installation instructions](http://bedtools.readthedocs.org/en/latest/content/installation.html)
 
