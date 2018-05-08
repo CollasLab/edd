@@ -15,7 +15,7 @@ install:
   - sudo pip install -q cython
   - sudo pip install -q pybedtools
   - sudo pip install -q numpy
-  - sudo pip install -q pysam
+  - sudo pip install -q pysam=0.11
   - travis_wait sudo pip install -q scipy
   - sudo pip install -q pandas
   - sudo pip install -q patsy
