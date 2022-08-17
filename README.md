@@ -8,18 +8,18 @@ The most CPU intensive parts of the algorithm have been written in Cython, which
 
 
 ```bash
-pip install Cython numpy pysam=0.11
+pip install Cython numpy pysam==0.11.2.2
 ```
 
 Currently, as of May 2018, the most recent pysam versions are incompatible with EDD.
 Multiple other packages depends upon pysam. 
 It is therefore recommended to install EDD in a [python](http://docs.python-guide.org/en/latest/dev/virtualenvs/) 
 or [conda](https://conda.io/docs/user-guide/tasks/manage-environments.html) virtual environment.
-Another posibillity is to create a docker or singularity container with EDD.
+Another possibility is to create a docker or singularity container with EDD. (See below for Docker instructions.)
 
 EDD currently uses the pybedtools library that again requires the [bedtools](https://github.com/arq5x/bedtools2) program to be installed and on the path. See the [bedtools documentation for installation instructions](http://bedtools.readthedocs.org/en/latest/content/installation.html)
 
-## Installation
+## Installation: local environment
 
 The latest stable version of EDD can be installed using pip
 
@@ -32,6 +32,21 @@ The latest development version of EDD can be installed by running the following 
 python setup.py install
 ```
 
+## Installation: Docker
+
+An example Dockerfile is included with this repository that should install EDD with all of its dependencies in an isolated environment. To create a Docker image (after [installing Docker itself](https://docs.docker.com/get-docker/)), clone this repository or place the Dockerfile in a directory and, from that directory, run the following shell command:
+
+```sh
+docker build . -t my_edd_image:latest
+```
+
+The build process includes the installation of complex packages such as scipy, so it may take upwards of 20 minutes for the process to complete. Once it is, you can launch a new EDD container with the shell command:
+
+```sh
+docker run --rm -it my_edd_image bash
+```
+
+See the Docker documentation for [instructions on volumes](https://docs.docker.com/storage/volumes/) to make your local files accessible within the container, so EDD can see your input files and write to a directory that you will have access to after the container exits.
 
 ## Usage
 All the required and optional arguments to EDD are listed here and further explained below
